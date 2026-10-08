@@ -4,6 +4,9 @@ set -euo pipefail
 
 echo "=== Testing speq-skill uninstallation in Docker ==="
 
+# An unrelated skill in the shared Agent Skills directory must survive
+mkdir -p ~/.agents/skills/speq-unrelated
+
 # Run uninstall script
 echo ""
 echo "--- Running uninstall.sh ---"
@@ -44,6 +47,18 @@ if [ -e ~/.codex/skills/speq-plan ] || [ -L ~/.codex/skills/speq-plan ]; then
     exit 1
 fi
 echo "PASS: Codex skills removed"
+
+if [[ -e ~/.agents/skills/speq-plan ]]; then
+    echo "FAIL: Agent Skills speq-plan still exists"
+    exit 1
+fi
+echo "PASS: Agent Skills (Pi) skills removed"
+
+if [[ ! -d ~/.agents/skills/speq-unrelated ]]; then
+    echo "FAIL: uninstall removed an Agent Skills entry it does not manage"
+    exit 1
+fi
+echo "PASS: unmanaged Agent Skills entry kept"
 
 echo ""
 echo "=== All uninstallation tests passed! ==="

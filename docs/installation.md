@@ -10,12 +10,12 @@
 curl -fsSL https://raw.githubusercontent.com/marconae/speq-skill/main/install.sh | bash
 ```
 
-Open Claude Code or Codex. Start with `/speq:mission` in Claude Code, or type `$` in Codex.
+Open Claude Code, Codex, or Pi. Start with `/speq:mission` in Claude Code, type `$` in Codex, or run `/skill:speq-mission` in Pi.
 
 ## Prerequisites
 
 - macOS or Linux
-- Claude Code CLI or Codex CLI/App, installed and configured
+- Claude Code CLI, Codex CLI/App, or Pi, installed and configured
 - Optional: [Serena](https://github.com/oraios/serena), installed globally. See [MCP Servers](./mcp-servers.md). `uv` is needed only if the `serena` command is missing and you let the installer install it. Get it from [astral.sh/uv](https://astral.sh/uv/).
 
 ## What the installer does
@@ -27,11 +27,12 @@ Open Claude Code or Codex. Start with `/speq:mission` in Claude Code, or type `$
 | Codex plugin payload | `~/.speq-skill/codex/plugins/speq-skill/` |
 | Codex marketplace registration | `~/.codex/config.toml` (`speq-skill-local`) |
 | Codex skills | `$CODEX_HOME/skills/speq-*` or `~/.codex/skills/speq-*` |
+| Agent Skills (Pi) | `~/.agents/skills/speq-*` |
 | Embeddings model ([snowflake-arctic-embed-xs](https://huggingface.co/Snowflake/snowflake-arctic-embed-xs), ~86MB) | `~/Library/Caches/speq/models/` on macOS, `~/.cache/speq/models/` on Linux (or `$SPEQ_CACHE_DIR/models/`) |
 
 - It downloads a pre-built `speq` binary (Linux x86_64/ARM64, macOS Apple Silicon).
 - It downloads the embedding model (`snowflake-arctic-embed-xs`) into the platform cache directory (`~/Library/Caches/speq/models/` on macOS, `~/.cache/speq/models/` on Linux) for semantic search
-- It installs the plugin for Claude Code and Codex, and registers the local Codex marketplace when Codex is installed.
+- It installs the plugin for Claude Code and Codex, registers the local Codex marketplace when Codex is installed, and installs the skills into the shared `~/.agents/skills/` location that Pi reads.
 - It asks before it installs Serena, when Serena is not registered yet.
 
 ## Install from source
@@ -51,9 +52,10 @@ ls ~/.speq-skill/plugins/speq-skill/.claude-plugin/plugin.json
 ls ~/.speq-skill/codex/plugins/speq-skill/.codex-plugin/plugin.json
 grep -n "speq-skill-local" ~/.codex/config.toml
 ls ~/.codex/skills/speq-mission
+ls ~/.agents/skills/speq-mission
 ```
 
-In Claude Code, `/plugin` shows the `speq:*` skills. In Codex, type `$` and select `speq:mission`.
+In Claude Code, `/plugin` shows the `speq:*` skills. In Codex, type `$` and select `speq:mission`. In Pi, `/skill:speq-mission` loads the mission skill.
 
 ## Update
 

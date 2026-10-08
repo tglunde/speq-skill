@@ -115,6 +115,7 @@ mkdir -p "$INSTALL_DIR"
 cp -r "dist/marketplace/." "$INSTALL_DIR/"
 register_codex_plugin
 install_codex_skills
+install_agents_skills
 
 # 5b. Serena comes from the global install
 offer_mcp_servers
@@ -133,5 +134,6 @@ fi
 echo "Claude plugin: ${MARKETPLACE_DIR}"
 echo "Codex plugin: ${INSTALL_DIR}/codex/plugins/speq-skill"
 echo "Codex marketplace: ${CODEX_MARKETPLACE_ROOT}"
+echo "Agent skills: ${AGENTS_SKILLS_DIR}"
 echo ""
 echo "To uninstall: ./uninstall.sh"

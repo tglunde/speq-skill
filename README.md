@@ -4,7 +4,7 @@
 
 # speq-skill
 
-**A light-weight and straightforward system for spec-driven development with Claude Code and Codex**
+**A light-weight and straightforward system for spec-driven development with Claude Code, Codex, and Pi**
 
 [![spec|driven](https://img.shields.io/badge/spec-driven-blue)](specs/)
 [![Rust](https://img.shields.io/badge/rust-stable-brightgreen.svg)](https://www.rust-lang.org/)
@@ -22,7 +22,7 @@
 curl -fsSL https://raw.githubusercontent.com/marconae/speq-skill/main/install.sh | bash
 ```
 
-Then open Claude Code or Codex and start with the matching trigger: `/speq:mission` in Claude Code, or `$speq:mission` in Codex.
+Then open Claude Code, Codex, or Pi and start with the matching trigger: `/speq:mission` in Claude Code, `$speq:mission` in Codex, or `/skill:speq-mission` in Pi.
 
 <details>
 <summary>What does the installer do?</summary>
@@ -33,6 +33,7 @@ Then open Claude Code or Codex and start with the matching trigger: `/speq:missi
 - Installs plugin files to `~/.speq-skill/`
 - Registers `/speq:*` skills for Claude Code and `$`-triggered skill suggestions for Codex when available
 - Registers the local Codex marketplace when the Codex CLI is available
+- Installs `/skill:speq-*` skills into `~/.agents/skills/` for Pi
 
 To uninstall, see [Installation — Uninstall](./docs/installation.md#uninstall).
 
@@ -42,7 +43,7 @@ To uninstall, see [Installation — Uninstall](./docs/installation.md#uninstall)
 
 ## Why I Built It
 
-I want to leverage AI coding agents such as Claude Code and Codex as effective tools to write software.
+I want to leverage AI coding agents such as Claude Code, Codex, and Pi as effective tools to write software.
 
 There are many other spec-driven development tools out there... 
 
@@ -115,7 +116,7 @@ Specs live in `specs/<domain>/<feature>/spec.md`. `specs/architecture.md` holds 
 
 ## Important
 
-`speq-skill` is a plugin for Claude Code, Codex, and other compatible AI coding agents. This tool provides workflow structure and spec management only—**the AI / coding agent generates all code, specs, or other artifacts**.
+`speq-skill` is a plugin for Claude Code, Codex, Pi, and other compatible AI coding agents. This tool provides workflow structure and spec management only—**the AI / coding agent generates all code, specs, or other artifacts**.
 
 ## Companions
 

@@ -6,6 +6,7 @@
 - Agents read the accepted ADRs before they plan; ADR text stays short.
 - `/speq:implement-pr` keeps rotation hand-off notes (`notes/`) out of its commits.
 - Plan review treats a plan as small when its verb is `fix`, its decision log has no design decisions, and it has no architecture delta.
+- The installer sets up Pi: it installs the `/skill:speq-*` skills into `~/.agents/skills/` and offers to register Serena.
 
 ## 0.23.0
 

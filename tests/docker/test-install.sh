@@ -83,6 +83,33 @@ if [[ ! -f ~/.codex/skills/speq-plan/SKILL.md ]]; then
 fi
 echo "PASS: Codex speq-plan skill exists"
 
+if [[ ! -f ~/.agents/skills/speq-plan/SKILL.md ]]; then
+    echo "FAIL: Agent Skills speq-plan skill missing"
+    exit 1
+fi
+if ! grep -q '^name: speq-plan$' ~/.agents/skills/speq-plan/SKILL.md; then
+    echo "FAIL: Agent Skills speq-plan carries no prefixed name"
+    exit 1
+fi
+if grep -rq '/speq:' ~/.agents/skills/speq-*; then
+    echo "FAIL: Agent Skills copies still use Claude invocation syntax"
+    grep -rn '/speq:' ~/.agents/skills/speq-*
+    exit 1
+fi
+if ! grep -rq '/skill:speq-' ~/.agents/skills/speq-plan/SKILL.md; then
+    echo "FAIL: Agent Skills copies carry no Pi invocation syntax"
+    exit 1
+fi
+echo "PASS: Agent Skills (Pi) skills installed"
+
+if ! grep -Eq '"serena"[[:space:]]*:' ~/.pi/agent/mcp.json 2>/dev/null; then
+    echo "PASS: installer did not register Serena for Pi without asking"
+else
+    echo "FAIL: installer registered Serena without asking"
+    cat ~/.pi/agent/mcp.json
+    exit 1
+fi
+
 if [[ ! -f ~/.codex/config.toml ]]; then
     echo "FAIL: Codex config missing"
     exit 1

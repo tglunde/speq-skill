@@ -9,6 +9,7 @@ MARKETPLACE_DIR="$HOME/.speq-skill"
 CODEX_MARKETPLACE_NAME="speq-skill-local"
 CODEX_LEGACY_MARKETPLACE_FILE="$HOME/.agents/plugins/marketplace.json"
 CODEX_SKILLS_DIR="${CODEX_HOME:-$HOME/.codex}/skills"
+AGENTS_SKILLS_DIR="$HOME/.agents/skills"
 
 # Colors
 RED='\033[0;31m'
@@ -109,6 +110,27 @@ remove_codex_skills() {
     info "Removed $removed Codex skill installation(s) from $CODEX_SKILLS_DIR"
 }
 
+# Agent Skills (Pi and other Agent Skills hosts). Only copies that carry the
+# marker file are removed, so unrelated skills in the shared directory stay.
+remove_agents_skills() {
+    if [[ ! -d "$AGENTS_SKILLS_DIR" ]]; then
+        warn "Agent Skills directory not found, skipping Agent Skills removal"
+        return
+    fi
+
+    local removed=0
+    for target in "$AGENTS_SKILLS_DIR"/speq-*; do
+        [[ -d "$target" ]] || continue
+
+        if [[ -f "$target/.speq-skill-managed" ]]; then
+            rm -rf "$target"
+            removed=$((removed + 1))
+        fi
+    done
+
+    info "Removed $removed Agent Skills installation(s) from $AGENTS_SKILLS_DIR"
+}
+
 main() {
     echo ""
     echo "============================"
@@ -116,7 +138,7 @@ main() {
     echo "============================"
     echo ""
 
-    local total=6
+    local total=7
 
     # Step 1: Uninstall Claude plugin
     step 1 $total "Removing Claude plugin..."
@@ -142,8 +164,12 @@ main() {
     step 4 $total "Removing Codex skills..."
     remove_codex_skills
 
-    # Step 5: Remove CLI binary
-    step 5 $total "Removing CLI binary..."
+    # Step 5: Remove Agent Skills (Pi)
+    step 5 $total "Removing Agent Skills..."
+    remove_agents_skills
+
+    # Step 6: Remove CLI binary
+    step 6 $total "Removing CLI binary..."
     if [ -f "$INSTALL_DIR/speq" ]; then
         rm -f "$INSTALL_DIR/speq"
         info "Removed $INSTALL_DIR/speq"
@@ -151,8 +177,8 @@ main() {
         warn "$INSTALL_DIR/speq not found (already removed?)"
     fi
 
-    # Step 6: Remove marketplace directory
-    step 6 $total "Removing marketplace directory..."
+    # Step 7: Remove marketplace directory
+    step 7 $total "Removing marketplace directory..."
     if [ -d "$MARKETPLACE_DIR" ]; then
         rm -rf "$MARKETPLACE_DIR"
         info "Removed $MARKETPLACE_DIR"

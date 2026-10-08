@@ -12,6 +12,12 @@ CODEX_MARKETPLACE_ROOT="$MARKETPLACE_DIR/codex"
 CODEX_SKILLS_DIR="${CODEX_HOME:-$HOME/.codex}/skills"
 CODEX_SERENA_ADD="codex mcp add serena -- serena start-mcp-server --project-from-cwd --context=codex"
 CLAUDE_SERENA_ADD="claude mcp add --scope user serena -- serena start-mcp-server --context claude-code --project-from-cwd"
+# Pi has no dedicated Serena context; `ide` is the generic coding-agent one.
+PI_SERENA_ADD="pi mcp add serena -- serena start-mcp-server --project-from-cwd --context=ide"
+# Pi reads the shared Agent Skills location, so the same copies serve every
+# Agent Skills host.
+AGENTS_SKILLS_DIR="$HOME/.agents/skills"
+PI_MCP_CONFIG="$HOME/.pi/agent/mcp.json"
 SERENA_CLI_INSTALL="uv tool install -p 3.13 serena-agent"
 
 # Colors
@@ -25,6 +31,17 @@ info() { echo -e "${GREEN}==>${NC} $1"; }
 warn() { echo -e "${YELLOW}Warning:${NC} $1"; }
 error() { echo -e "${RED}Error:${NC} $1"; exit 1; }
 step() { echo -e "${BLUE}[${1}/${2}]${NC} $3"; }
+
+sed_in_place() {
+    local expr="$1"
+    local file="$2"
+
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        sed -i '' "$expr" "$file"
+    else
+        sed -i "$expr" "$file"
+    fi
+}
 
 # Get latest release tag from GitHub API
 get_latest_version() {
@@ -90,6 +107,50 @@ install_codex_skills() {
     done
 
     info "Installed Codex /speq:* skills into $CODEX_SKILLS_DIR"
+}
+
+# The Claude payload carries the bare skill names (`plan`) and Claude's
+# namespaced invocation form (`/speq:plan`). The copies under
+# AGENTS_SKILLS_DIR use the prefixed, hyphen-only name `speq-<name>` so they
+# neither collide with unrelated skills nor exceed the Agent Skills name rules,
+# and their invocations become Pi's `/skill:speq-<name>`.
+install_agents_skills() {
+    local source_dir="$MARKETPLACE_DIR/plugins/speq-skill/skills"
+
+    if [[ ! -d "$source_dir" ]]; then
+        warn "Skill payload missing; skipping Agent Skills installation"
+        return
+    fi
+
+    mkdir -p "$AGENTS_SKILLS_DIR"
+
+    for skill_dir in "$source_dir"/*; do
+        [[ -d "$skill_dir" ]] || continue
+
+        local bare_name
+        local target
+        bare_name=$(basename "$skill_dir")
+        target="$AGENTS_SKILLS_DIR/speq-$bare_name"
+
+        if [[ -L "$target" ]]; then
+            rm -f "$target"
+        elif [[ -d "$target" && -f "$target/.speq-skill-managed" ]]; then
+            rm -rf "$target"
+        elif [[ -e "$target" ]]; then
+            warn "Skill already exists and is not managed by speq-skill, skipping: $target"
+            continue
+        fi
+
+        cp -R "$skill_dir" "$target"
+        touch "$target/.speq-skill-managed"
+
+        find "$target" -name "*.md" -type f | while read -r file; do
+            sed_in_place "s/^name: $bare_name\$/name: speq-$bare_name/" "$file"
+            sed_in_place 's|/speq:|/skill:speq-|g' "$file"
+        done
+    done
+
+    info "Installed Agent Skills into $AGENTS_SKILLS_DIR (Pi: /skill:speq-*)"
 }
 
 # Detect platform triple understood by the release archive naming convention
@@ -173,6 +234,7 @@ install_from_prebuilt() {
 
     register_codex_plugin
     install_codex_skills
+    install_agents_skills
 
     return 0
 }
@@ -252,6 +314,9 @@ build_from_source() {
     # Register with Codex marketplace
     register_codex_plugin
     install_codex_skills
+
+    # Install Agent Skills (Pi)
+    install_agents_skills
 }
 
 # Resolve the platform-native cache directory, mirroring the `dirs` crate's
@@ -339,6 +404,13 @@ claude_has_serena() {
         END { exit !found }'
 }
 
+# Pi keeps its servers in ~/.pi/agent/mcp.json. Reading that file is cheaper
+# and quieter than `pi mcp list`, which connects to every configured server.
+pi_has_serena() {
+    [[ -f "$PI_MCP_CONFIG" ]] || return 1
+    grep -Eq '"serena"[[:space:]]*:' "$PI_MCP_CONFIG"
+}
+
 offer_mcp_servers() {
     if command -v claude &> /dev/null && ! claude_has_serena; then
         offer_action Install Installed serena "Claude Code" "$CLAUDE_SERENA_ADD" ensure_serena_cli
@@ -346,6 +418,10 @@ offer_mcp_servers() {
 
     if command -v codex &> /dev/null && ! codex mcp get serena >/dev/null 2>&1; then
         offer_action Install Installed serena "Codex" "$CODEX_SERENA_ADD" ensure_serena_cli
+    fi
+
+    if command -v pi &> /dev/null && ! pi_has_serena; then
+        offer_action Install Installed serena "Pi" "$PI_SERENA_ADD" ensure_serena_cli
     fi
     return 0
 }
@@ -454,6 +530,7 @@ main() {
     echo "  Binary:      $INSTALL_DIR/speq"
     echo "  Plugin:      $MARKETPLACE_DIR/"
     echo "  Codex:       $CODEX_MARKETPLACE_ROOT"
+    echo "  Agent skills: $AGENTS_SKILLS_DIR"
     if command -v claude &> /dev/null; then
         echo "  Claude CLI:  plugin registered"
     else
@@ -463,6 +540,11 @@ main() {
         echo "  Codex CLI:   marketplace registered"
     else
         echo "  Codex CLI:   not found (marketplace entry created)"
+    fi
+    if command -v pi &> /dev/null; then
+        echo "  Pi CLI:      skills installed (/skill:speq-*)"
+    else
+        echo "  Pi CLI:      not found (skills installed for later)"
     fi
     echo ""
     echo "Run 'speq --help' to get started."
