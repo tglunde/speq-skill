@@ -9,8 +9,8 @@
 - **Tests**: put integration test specs in files under `tests/fixtures/`. Do not write specs as inline strings.
 - **Commits**: use Conventional Commits — `<type>[scope]: <description>`. Types: `feat`, `fix`, `perf`, `refactor`, `test`, `docs`, `spec`, `chore`. Mark a breaking change with `!` after the type, or a `BREAKING CHANGE:` footer.
 - **Changelog**: `CHANGELOG.md` lists user-facing features and behavior changes only. Do not add `Fix:` entries, bug-fix notes, internal agent or skill names, tags, refactors, dependency bumps, or other technical detail. Describe what a user sees or does differently.
-- @specs/mission.md applies and describes the `speq` CLI only.
-- @specs/architecture.md describes the speq CLI architecture only.
+- @specs/mission.md applies to the whole system: the `speq` CLI, the skills, and the plugin.
+- @specs/architecture.md describes the `speq` CLI architecture only. The skills and the plugin are described in their own files and `docs/`.
 - Skill purpose and intent live in the skill files and `docs/`.
 
 ## Commands

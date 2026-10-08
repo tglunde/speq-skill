@@ -33,7 +33,7 @@ Then open Claude Code, Codex, or Pi and start with the matching trigger: `/speq:
 - Installs plugin files to `~/.speq-skill/`
 - Registers `/speq:*` skills for Claude Code and `$`-triggered skill suggestions for Codex when available
 - Registers the local Codex marketplace when the Codex CLI is available
-- Installs `/skill:speq-*` skills into `~/.agents/skills/` for Pi
+- Installs `/skill:speq-*` skills into `~/.agents/skills/` and the sub-agents into `~/.pi/agent/agents/speq/` for Pi
 
 To uninstall, see [Installation — Uninstall](./docs/installation.md#uninstall).
 

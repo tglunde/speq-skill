@@ -7,6 +7,10 @@ echo "=== Testing speq-skill uninstallation in Docker ==="
 # An unrelated skill in the shared Agent Skills directory must survive
 mkdir -p ~/.agents/skills/speq-unrelated
 
+# An agent the operator wrote next to the speq agents must survive
+mkdir -p ~/.pi/agent/agents
+echo "operator agent" > ~/.pi/agent/agents/speq-unrelated.md
+
 # Run uninstall script
 echo ""
 echo "--- Running uninstall.sh ---"
@@ -59,6 +63,18 @@ if [[ ! -d ~/.agents/skills/speq-unrelated ]]; then
     exit 1
 fi
 echo "PASS: unmanaged Agent Skills entry kept"
+
+if [[ -e ~/.pi/agent/agents/speq ]]; then
+    echo "FAIL: Pi sub-agents still exist"
+    exit 1
+fi
+echo "PASS: Pi sub-agents removed"
+
+if [[ ! -f ~/.pi/agent/agents/speq-unrelated.md ]]; then
+    echo "FAIL: uninstall removed a Pi agent it does not manage"
+    exit 1
+fi
+echo "PASS: unmanaged Pi agent kept"
 
 echo ""
 echo "=== All uninstallation tests passed! ==="

@@ -64,6 +64,51 @@ Workflow skills coordinate the work. They gather context, ask clarifying questio
 
 ---
 
+## Pi routing
+
+Pi skill frontmatter carries no model, so the orchestration skills run on the session model. The sub-agents carry a reasoning level and no model: a Pi model id names a provider, and pinning one would mandate a vendor. The levels match the tiers above.
+
+| Skill or agent | Thinking | Notes |
+|----------------|----------|-------|
+| `/skill:speq-plan` | inherited | Thin orchestration |
+| `/skill:speq-implement` | inherited | Thin orchestration |
+| `/skill:speq-record` | inherited | Thin orchestration |
+| `/skill:speq-mission` | inherited | Interactive bootstrap |
+| `/skill:speq-plan-pr` | inherited | Thin orchestration (headless) |
+| `/skill:speq-implement-pr` | inherited | Thin orchestration (headless) |
+| `/skill:speq-audit` | inherited | Thin orchestration (health check) |
+| Utility skills | inherited | Reference material for the caller |
+| `speq-planner-agent` | `xhigh` | Spec deltas, context, task decomposition |
+| `speq-plan-reviewer` | `xhigh` | Adversarial plan review |
+| `speq-implementer-agent` | `high` | Standard implementation tasks |
+| `speq-implementer-expert-agent` | `xhigh` | Tasks tagged `[expert]` |
+| `speq-code-reviewer` | `xhigh` | Adversarial implementation review |
+| `speq-audit-agent` | `high` | Mission ↔ spec-library sync |
+| `speq-architecture-agent` | `high` | Brownfield draft of `specs/architecture.md` for `/skill:speq-mission` |
+| `speq-adr-audit-agent` | `high` | ADR noise and accuracy review |
+| `speq-recorder-agent` | `medium` | Deterministic spec merge and archive |
+
+### Pin the Pi models
+
+Give the heavy roles a stronger model in `~/.pi/agent/settings.json`. Replace the ids with models your providers expose:
+
+```json
+{
+  "subagents": {
+    "agentOverrides": {
+      "speq-planner-agent": { "model": "<provider>/<heavy-model>" },
+      "speq-plan-reviewer": { "model": "<provider>/<heavy-model>" },
+      "speq-implementer-expert-agent": { "model": "<provider>/<heavy-model>" },
+      "speq-code-reviewer": { "model": "<provider>/<heavy-model>" }
+    }
+  }
+}
+```
+
+An override replaces only the fields it sets, so the thinking levels above still apply.
+
+---
+
 ## Expert task tagging
 
 `planner-agent` marks tasks that need deep reasoning with the tag `[expert]`:
@@ -80,3 +125,5 @@ When `/speq:implement` processes a task group:
 - When expert tasks establish invariants that standard tasks depend on, they run first
 
 Use `[expert]` for concurrency, subtle correctness, cross-file refactors, novel algorithms, and security-sensitive work. Avoid it for routine CLI plumbing, fixtures, docs, or straightforward use of existing patterns.
+
+On Pi the same agents carry the `speq-` prefix, so the routes are `speq-implementer-agent` and `speq-implementer-expert-agent`.

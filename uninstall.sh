@@ -10,6 +10,7 @@ CODEX_MARKETPLACE_NAME="speq-skill-local"
 CODEX_LEGACY_MARKETPLACE_FILE="$HOME/.agents/plugins/marketplace.json"
 CODEX_SKILLS_DIR="${CODEX_HOME:-$HOME/.codex}/skills"
 AGENTS_SKILLS_DIR="$HOME/.agents/skills"
+PI_AGENTS_DIR="$HOME/.pi/agent/agents/speq"
 
 # Colors
 RED='\033[0;31m'
@@ -131,6 +132,17 @@ remove_agents_skills() {
     info "Removed $removed Agent Skills installation(s) from $AGENTS_SKILLS_DIR"
 }
 
+# Pi sub-agents. The marker file lives inside the speq-owned directory, so an
+# agent the operator wrote outside it is never removed.
+remove_pi_agents() {
+    if [[ -d "$PI_AGENTS_DIR" && -f "$PI_AGENTS_DIR/.speq-skill-managed" ]]; then
+        rm -rf "$PI_AGENTS_DIR"
+        info "Removed Pi sub-agents from $PI_AGENTS_DIR"
+    else
+        warn "Pi sub-agents not found, skipping Pi agent removal"
+    fi
+}
+
 main() {
     echo ""
     echo "============================"
@@ -138,7 +150,7 @@ main() {
     echo "============================"
     echo ""
 
-    local total=7
+    local total=8
 
     # Step 1: Uninstall Claude plugin
     step 1 $total "Removing Claude plugin..."
@@ -168,8 +180,12 @@ main() {
     step 5 $total "Removing Agent Skills..."
     remove_agents_skills
 
-    # Step 6: Remove CLI binary
-    step 6 $total "Removing CLI binary..."
+    # Step 6: Remove Pi sub-agents
+    step 6 $total "Removing Pi sub-agents..."
+    remove_pi_agents
+
+    # Step 7: Remove CLI binary
+    step 7 $total "Removing CLI binary..."
     if [ -f "$INSTALL_DIR/speq" ]; then
         rm -f "$INSTALL_DIR/speq"
         info "Removed $INSTALL_DIR/speq"
@@ -177,8 +193,8 @@ main() {
         warn "$INSTALL_DIR/speq not found (already removed?)"
     fi
 
-    # Step 7: Remove marketplace directory
-    step 7 $total "Removing marketplace directory..."
+    # Step 8: Remove marketplace directory
+    step 8 $total "Removing marketplace directory..."
     if [ -d "$MARKETPLACE_DIR" ]; then
         rm -rf "$MARKETPLACE_DIR"
         info "Removed $MARKETPLACE_DIR"

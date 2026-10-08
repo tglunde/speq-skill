@@ -14,9 +14,10 @@ CODEX_SERENA_ADD="codex mcp add serena -- serena start-mcp-server --project-from
 CLAUDE_SERENA_ADD="claude mcp add --scope user serena -- serena start-mcp-server --context claude-code --project-from-cwd"
 # Pi has no dedicated Serena context; `ide` is the generic coding-agent one.
 PI_SERENA_ADD="pi mcp add serena -- serena start-mcp-server --project-from-cwd --context=ide"
-# Pi reads the shared Agent Skills location, so the same copies serve every
-# Agent Skills host.
+# Pi reads the shared Agent Skills location. The installer writes Pi's own
+# copies there, and its sub-agents into the directory Pi discovers.
 AGENTS_SKILLS_DIR="$HOME/.agents/skills"
+PI_AGENTS_DIR="$HOME/.pi/agent/agents/speq"
 PI_MCP_CONFIG="$HOME/.pi/agent/mcp.json"
 SERENA_CLI_INSTALL="uv tool install -p 3.13 serena-agent"
 
@@ -31,17 +32,6 @@ info() { echo -e "${GREEN}==>${NC} $1"; }
 warn() { echo -e "${YELLOW}Warning:${NC} $1"; }
 error() { echo -e "${RED}Error:${NC} $1"; exit 1; }
 step() { echo -e "${BLUE}[${1}/${2}]${NC} $3"; }
-
-sed_in_place() {
-    local expr="$1"
-    local file="$2"
-
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        sed -i '' "$expr" "$file"
-    else
-        sed -i "$expr" "$file"
-    fi
-}
 
 # Get latest release tag from GitHub API
 get_latest_version() {
@@ -109,16 +99,15 @@ install_codex_skills() {
     info "Installed Codex /speq:* skills into $CODEX_SKILLS_DIR"
 }
 
-# The Claude payload carries the bare skill names (`plan`) and Claude's
-# namespaced invocation form (`/speq:plan`). The copies under
-# AGENTS_SKILLS_DIR use the prefixed, hyphen-only name `speq-<name>` so they
-# neither collide with unrelated skills nor exceed the Agent Skills name rules,
-# and their invocations become Pi's `/skill:speq-<name>`.
+# Pi's payload already carries the prefixed skill names (`speq-<name>`), the
+# `/skill:speq-<name>` invocations, Pi's tool names, and the Pi host note, so
+# these copies need no rewriting. The payload is the skill tree the build
+# produced; this function only places it where Pi reads it.
 install_agents_skills() {
-    local source_dir="$MARKETPLACE_DIR/plugins/speq-skill/skills"
+    local source_dir="$MARKETPLACE_DIR/pi/skills"
 
     if [[ ! -d "$source_dir" ]]; then
-        warn "Skill payload missing; skipping Agent Skills installation"
+        warn "Pi skill payload missing; skipping Agent Skills installation"
         return
     fi
 
@@ -127,10 +116,8 @@ install_agents_skills() {
     for skill_dir in "$source_dir"/*; do
         [[ -d "$skill_dir" ]] || continue
 
-        local bare_name
         local target
-        bare_name=$(basename "$skill_dir")
-        target="$AGENTS_SKILLS_DIR/speq-$bare_name"
+        target="$AGENTS_SKILLS_DIR/$(basename "$skill_dir")"
 
         if [[ -L "$target" ]]; then
             rm -f "$target"
@@ -143,14 +130,33 @@ install_agents_skills() {
 
         cp -R "$skill_dir" "$target"
         touch "$target/.speq-skill-managed"
-
-        find "$target" -name "*.md" -type f | while read -r file; do
-            sed_in_place "s/^name: $bare_name\$/name: speq-$bare_name/" "$file"
-            sed_in_place 's|/speq:|/skill:speq-|g' "$file"
-        done
     done
 
     info "Installed Agent Skills into $AGENTS_SKILLS_DIR (Pi: /skill:speq-*)"
+}
+
+# Pi discovers sub-agents under ~/.pi/agent/agents/. They live in their own
+# directory so one marker file covers the whole install and removal cannot
+# touch an agent the operator wrote.
+install_pi_agents() {
+    local source_dir="$MARKETPLACE_DIR/pi/agents"
+
+    if [[ ! -d "$source_dir" ]]; then
+        warn "Pi agent payload missing; skipping Pi agent installation"
+        return
+    fi
+
+    if [[ -e "$PI_AGENTS_DIR" && ! -f "$PI_AGENTS_DIR/.speq-skill-managed" ]]; then
+        warn "Pi agent directory exists and is not managed by speq-skill, skipping: $PI_AGENTS_DIR"
+        return
+    fi
+
+    rm -rf "$PI_AGENTS_DIR"
+    mkdir -p "$PI_AGENTS_DIR"
+    cp "$source_dir"/*.md "$PI_AGENTS_DIR/"
+    touch "$PI_AGENTS_DIR/.speq-skill-managed"
+
+    info "Installed Pi sub-agents into $PI_AGENTS_DIR"
 }
 
 # Detect platform triple understood by the release archive naming convention
@@ -235,6 +241,7 @@ install_from_prebuilt() {
     register_codex_plugin
     install_codex_skills
     install_agents_skills
+    install_pi_agents
 
     return 0
 }
@@ -315,8 +322,9 @@ build_from_source() {
     register_codex_plugin
     install_codex_skills
 
-    # Install Agent Skills (Pi)
+    # Install Agent Skills and sub-agents (Pi)
     install_agents_skills
+    install_pi_agents
 }
 
 # Resolve the platform-native cache directory, mirroring the `dirs` crate's
@@ -531,6 +539,7 @@ main() {
     echo "  Plugin:      $MARKETPLACE_DIR/"
     echo "  Codex:       $CODEX_MARKETPLACE_ROOT"
     echo "  Agent skills: $AGENTS_SKILLS_DIR"
+    echo "  Pi agents:   $PI_AGENTS_DIR"
     if command -v claude &> /dev/null; then
         echo "  Claude CLI:  plugin registered"
     else
@@ -542,9 +551,9 @@ main() {
         echo "  Codex CLI:   not found (marketplace entry created)"
     fi
     if command -v pi &> /dev/null; then
-        echo "  Pi CLI:      skills installed (/skill:speq-*)"
+        echo "  Pi CLI:      skills (/skill:speq-*) and agents installed"
     else
-        echo "  Pi CLI:      not found (skills installed for later)"
+        echo "  Pi CLI:      not found (skills and agents installed for later)"
     fi
     echo ""
     echo "Run 'speq --help' to get started."

@@ -83,6 +83,27 @@ if [[ ! -f ~/.codex/skills/speq-plan/SKILL.md ]]; then
 fi
 echo "PASS: Codex speq-plan skill exists"
 
+# The Pi payload is what the installer places, so it must already carry Pi's
+# names, invocations, and tool names.
+if [[ ! -f ~/.speq-skill/pi/skills/speq-plan/SKILL.md ]]; then
+    echo "FAIL: Pi payload speq-plan skill missing"
+    exit 1
+fi
+if ! grep -q '^name: speq-plan$' ~/.speq-skill/pi/skills/speq-plan/SKILL.md; then
+    echo "FAIL: Pi payload speq-plan carries no prefixed name"
+    exit 1
+fi
+if grep -rE 'AskUserQuestion|ToolSearch|ExitPlanMode|Claude Code|/speq:' ~/.speq-skill/pi/skills >/tmp/pi-payload-claude-syntax.txt; then
+    echo "FAIL: Pi payload contains Claude-only workflow syntax"
+    cat /tmp/pi-payload-claude-syntax.txt
+    exit 1
+fi
+if ! grep -q '^> \*\*Pi host:\*\*' ~/.speq-skill/pi/skills/speq-implement/SKILL.md; then
+    echo "FAIL: Pi payload speq-implement carries no Pi host note"
+    exit 1
+fi
+echo "PASS: Pi payload built with Pi tool names"
+
 if [[ ! -f ~/.agents/skills/speq-plan/SKILL.md ]]; then
     echo "FAIL: Agent Skills speq-plan skill missing"
     exit 1
@@ -101,6 +122,33 @@ if ! grep -rq '/skill:speq-' ~/.agents/skills/speq-plan/SKILL.md; then
     exit 1
 fi
 echo "PASS: Agent Skills (Pi) skills installed"
+
+if [[ ! -f ~/.pi/agent/agents/speq/speq-planner-agent.md ]]; then
+    echo "FAIL: Pi sub-agents missing"
+    exit 1
+fi
+if ! grep -q '^name: speq-planner-agent$' ~/.pi/agent/agents/speq/speq-planner-agent.md; then
+    echo "FAIL: Pi sub-agent carries no prefixed name"
+    exit 1
+fi
+if ! grep -q '^thinking: xhigh$' ~/.pi/agent/agents/speq/speq-planner-agent.md; then
+    echo "FAIL: Pi sub-agent carries no thinking level"
+    exit 1
+fi
+if grep -rE '^(model|effort|color): ' ~/.pi/agent/agents/speq; then
+    echo "FAIL: Pi sub-agents carry Claude-only frontmatter"
+    exit 1
+fi
+if [[ "$(ls ~/.pi/agent/agents/speq/speq-*.md | wc -l | tr -d ' ')" != "9" ]]; then
+    echo "FAIL: expected 9 Pi sub-agents, found $(ls ~/.pi/agent/agents/speq/speq-*.md | wc -l | tr -d ' ')"
+    exit 1
+fi
+if grep -rE 'AskUserQuestion|ToolSearch|ExitPlanMode|Claude Code' ~/.pi/agent/agents/speq >/tmp/pi-agents-claude-syntax.txt; then
+    echo "FAIL: Pi sub-agents contain Claude-only workflow syntax"
+    cat /tmp/pi-agents-claude-syntax.txt
+    exit 1
+fi
+echo "PASS: Pi sub-agents installed"
 
 if ! grep -Eq '"serena"[[:space:]]*:' ~/.pi/agent/mcp.json 2>/dev/null; then
     echo "PASS: installer did not register Serena for Pi without asking"

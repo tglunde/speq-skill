@@ -13,6 +13,10 @@ MARKETPLACE_DIR="$DIST_DIR/marketplace"
 CLAUDE_PLUGIN_DIR="$MARKETPLACE_DIR/plugins/speq-skill"
 CODEX_PLUGIN_DIR="$MARKETPLACE_DIR/codex/plugins/speq-skill"
 CODEX_MARKETPLACE_FILE="$MARKETPLACE_DIR/codex/.agents/plugins/marketplace.json"
+# Pi has no plugin manifest: the installer copies this payload into the two
+# locations Pi reads, the shared Agent Skills directory and the user agents
+# directory.
+PI_PLUGIN_DIR="$MARKETPLACE_DIR/pi"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -53,6 +57,8 @@ setup_dirs() {
     mkdir -p "$CODEX_PLUGIN_DIR/skills"
     mkdir -p "$CODEX_PLUGIN_DIR/agents"
     mkdir -p "$(dirname "$CODEX_MARKETPLACE_FILE")"
+    mkdir -p "$PI_PLUGIN_DIR/skills"
+    mkdir -p "$PI_PLUGIN_DIR/agents"
 }
 
 # Rewrite slash-command invocations (`/speq-plan`) to the installed plugin's
@@ -124,6 +130,143 @@ effort: medium
     esac
 }
 
+# --- Pi transforms ---------------------------------------------------------
+#
+# Pi reads the shared Agent Skills location, so its copies carry the prefixed
+# skill name (`speq-<name>`), the `/skill:speq-<name>` invocation, and Pi's own
+# tool names. Pi sub-agents live in a directory of their own and carry the same
+# `speq-` prefix, so they cannot collide with an operator's own agents.
+
+# Agent names the skills route to. Order does not matter: each pattern refuses a
+# match that abuts another name, so `audit-agent` never rewrites the tail of
+# `adr-audit-agent`.
+PI_AGENT_NAMES=(
+    planner-agent
+    plan-reviewer
+    implementer-agent
+    implementer-expert-agent
+    code-reviewer
+    recorder-agent
+    audit-agent
+    adr-audit-agent
+    architecture-agent
+)
+
+# Skills that spawn sub-agents or ask the user questions carry the host note.
+PI_HOST_NOTE_SKILLS=(
+    speq-plan
+    speq-plan-pr
+    speq-implement
+    speq-implement-pr
+    speq-record
+    speq-mission
+    speq-audit
+)
+
+# Sentence-level Pi rewrites. Pi exposes Serena and Context7 tools directly, so
+# the Claude "search, then load the schema" instructions are replaced. Each
+# pattern is a verbatim sentence from the source: a source edit that rewords one
+# leaves the Claude text in the Pi copy, so keep the two in step.
+transform_pi_phrases() {
+    local file="$1"
+
+    perl -0pi -e '
+        s/\QThese tools are deferred in this harness\E.{0,8}\Qa bare tool name has no loaded schema yet.\E/Serena tools are available under the `mcp__serena__` prefix./s;
+        s/\QCall `ToolSearch` with the query `serena` to find them, then load the ones you need (`select:<full tool name>`, comma-separated for several) before calling them.\E/Call `searchTools("serena")` in a `codemode` script to list them, then call the ones you need by their `mcp__serena__` names./;
+        s/\QFind the tools with `ToolSearch` (query `context7`) and load them before calling.\E/Run `searchTools("context7")` in a `codemode` script to find the tools, then call them./;
+        s/\Qwhen the host has no `ToolSearch`, for example Codex\E/when the host has no `searchTools`/;
+        s/\Qcall `ToolSearch` with the query `serena`\E/run `searchTools("serena")` in a `codemode` script/;
+        s/\Q`ToolSearch` finds no Serena tools\E/`searchTools("serena")` finds no Serena tools/;
+        s/\Q`ToolSearch` finds Serena tools\E/`searchTools("serena")` finds Serena tools/;
+        s/\Qcarry on with the generic tools (`Read`, `Grep`, `Edit`)\E/carry on with the generic tools (`read`, `grep`, `edit`)/;
+        s/^- If Claude Code is in "plan mode", call `ExitPlanMode` and ask to proceed with cleared context$/- Pi has no plan mode. Present the plan and ask the user to proceed with cleared context./m;
+    ' "$file"
+}
+
+transform_pi_tool_names() {
+    local file="$1"
+
+    perl -0pi -e '
+        s/\bAskUserQuestion\b/ask_user_question/g;
+        s/\bToolSearch\b/searchTools/g;
+        s/\bWebSearch\b/web_search/g;
+        s/\bExitPlanMode\b/present the plan and ask the user to proceed/g;
+        s/\bClaude Code\b/Pi/g;
+    ' "$file"
+}
+
+prefix_pi_agent_names() {
+    local file="$1"
+    local agent
+
+    for agent in "${PI_AGENT_NAMES[@]}"; do
+        perl -0pi -e "s{(?<![A-Za-z0-9-])\Q$agent\E(?![A-Za-z0-9-])}{speq-$agent}g" "$file"
+    done
+}
+
+# `/speq-plan` and the already-namespaced `/speq:plan` -> `/skill:speq-plan`,
+# while leaving file-path citations (`.claude/skills/speq-plan/...`) untouched.
+namespace_pi_skill_invocations() {
+    local file="$1"
+
+    perl -0pi -e 's{(?<![A-Za-z0-9_./-])/speq-([A-Za-z0-9_-]*)(?=$|[^A-Za-z0-9_/-])}{/skill:speq-$1}g; s{(?<![A-Za-z0-9_./-])/speq:([A-Za-z0-9_-]*)(?=$|[^A-Za-z0-9_/-])}{/skill:speq-$1}g' "$file"
+}
+
+# Injected once, under the document's H1.
+inject_pi_host_note() {
+    local file="$1"
+
+    if grep -q '^> \*\*Pi host:\*\*' "$file"; then
+        return
+    fi
+
+    perl -0pi -e 's{^(# [^\n]*\n)}{$1\n> **Pi host:** spawn every sub-agent this document names with the `subagent` tool: `subagent({ agent: "<name>", task: "<brief>" })`. A `Delegate to <agent> — <title>` line is that call, with the fenced brief below as `task`. Ask the user with `ask_user_question`. Batch independent reads, searches, and git commands into one `codemode` script instead of one tool call each.\n}m' "$file"
+}
+
+pi_skill_has_host_note() {
+    local skill_name="$1"
+    local candidate
+
+    for candidate in "${PI_HOST_NOTE_SKILLS[@]}"; do
+        [[ "$skill_name" == "$candidate" ]] && return 0
+    done
+
+    return 1
+}
+
+transform_pi_markdown() {
+    local file="$1"
+    local source_name="$2"
+    local target_name="$3"
+
+    sed_in_place "s/^name: $source_name$/name: $target_name/" "$file"
+    # Pi skill frontmatter has no model or effort field.
+    sed_in_place '/^model: /d' "$file"
+    sed_in_place '/^effort: /d' "$file"
+    transform_pi_phrases "$file"
+    transform_pi_tool_names "$file"
+    prefix_pi_agent_names "$file"
+    namespace_pi_skill_invocations "$file"
+}
+
+# Pi sub-agent frontmatter drops Claude's `model` and `color`, and carries the
+# reasoning level as `thinking`. No model is pinned: Pi model ids are
+# provider-specific, so the operator chooses with subagents.agentOverrides.
+transform_pi_agent() {
+    local file="$1"
+    local source_name="$2"
+    local target_name="$3"
+
+    sed_in_place "s/^name: $source_name$/name: $target_name/" "$file"
+    sed_in_place 's/^effort: /thinking: /' "$file"
+    sed_in_place '/^model: /d' "$file"
+    sed_in_place '/^color: /d' "$file"
+    transform_pi_phrases "$file"
+    transform_pi_tool_names "$file"
+    prefix_pi_agent_names "$file"
+    namespace_pi_skill_invocations "$file"
+}
+
 copy_skill_for_platform() {
     local platform="$1"
     local source_name="$2"
@@ -134,6 +277,7 @@ copy_skill_for_platform() {
     case "$platform" in
         claude) plugin_dir="$CLAUDE_PLUGIN_DIR" ;;
         codex) plugin_dir="$CODEX_PLUGIN_DIR" ;;
+        pi) plugin_dir="$PI_PLUGIN_DIR"; target_name="$source_name" ;;
         *) log_error "Unknown platform: $platform"; exit 1 ;;
     esac
 
@@ -144,10 +288,17 @@ copy_skill_for_platform() {
         cp -r "$source_path" "$target_path"
 
         find "$target_path" -name "*.md" -type f | while read -r file; do
-            transform_common_markdown "$file" "$source_name" "$target_name" "$platform"
-            if [[ "$platform" == "codex" ]]; then
-                transform_codex_markdown "$file"
-                set_codex_skill_model "$file" "$source_name"
+            if [[ "$platform" == "pi" ]]; then
+                transform_pi_markdown "$file" "$source_name" "$target_name"
+                if [[ "$(basename "$file")" == "SKILL.md" ]] && pi_skill_has_host_note "$source_name"; then
+                    inject_pi_host_note "$file"
+                fi
+            else
+                transform_common_markdown "$file" "$source_name" "$target_name" "$platform"
+                if [[ "$platform" == "codex" ]]; then
+                    transform_codex_markdown "$file"
+                    set_codex_skill_model "$file" "$source_name"
+                fi
             fi
         done
     else
@@ -164,6 +315,7 @@ copy_skills() {
             skill_name=$(basename "$skill_dir")
             copy_skill_for_platform claude "$skill_name"
             copy_skill_for_platform codex "$skill_name"
+            copy_skill_for_platform pi "$skill_name"
         fi
     done
 }
@@ -191,6 +343,7 @@ copy_agents_for_platform() {
     case "$platform" in
         claude) plugin_dir="$CLAUDE_PLUGIN_DIR" ;;
         codex) plugin_dir="$CODEX_PLUGIN_DIR" ;;
+        pi) plugin_dir="$PI_PLUGIN_DIR" ;;
         *) log_error "Unknown platform: $platform"; exit 1 ;;
     esac
 
@@ -201,14 +354,28 @@ copy_agents_for_platform() {
     for agent_file in "$SOURCE_DIR/agents"/*.md; do
         if [[ -f "$agent_file" ]]; then
             local filename
+            local bare_name
+            local target_file
             filename=$(basename "$agent_file")
+            bare_name="${filename%.md}"
             log_info "  [$platform] $filename"
-            cp "$agent_file" "$plugin_dir/agents/$filename"
-            namespace_slash_commands "$plugin_dir/agents/$filename"
 
-            if [[ "$platform" == "codex" ]]; then
-                transform_codex_markdown "$plugin_dir/agents/$filename"
-                set_codex_agent_model "$plugin_dir/agents/$filename" "$filename"
+            if [[ "$platform" == "pi" ]]; then
+                target_file="$plugin_dir/agents/speq-$filename"
+                cp "$agent_file" "$target_file"
+                transform_pi_agent "$target_file" "$bare_name" "speq-$bare_name"
+                if [[ "$bare_name" == "planner-agent" ]]; then
+                    inject_pi_host_note "$target_file"
+                fi
+            else
+                target_file="$plugin_dir/agents/$filename"
+                cp "$agent_file" "$target_file"
+                namespace_slash_commands "$target_file"
+
+                if [[ "$platform" == "codex" ]]; then
+                    transform_codex_markdown "$target_file"
+                    set_codex_agent_model "$target_file" "$filename"
+                fi
             fi
         fi
     done
@@ -218,6 +385,7 @@ copy_agents() {
     log_info "Copying agents..."
     copy_agents_for_platform claude
     copy_agents_for_platform codex
+    copy_agents_for_platform pi
 }
 
 generate_agents_json_array() {
