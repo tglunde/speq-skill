@@ -1,13 +1,19 @@
 # Changelog
 
+## 0.26.0
+
+- One routing table (`scripts/plugin/model-routing.yml`) owns the model and reasoning level of every agent and skill. The build injects each harness's frontmatter from it and emits `pi/model-overrides.json`; the installer reconciles the operator's Pi `subagents.agentOverrides` from that artifact, and the uninstaller removes exactly the entries it wrote.
+- The installer sets up Pi: it installs the `/skill:speq-*` skills into `~/.agents/skills/`, installs the sub-agents into `~/.pi/agent/agents/speq/`, and offers to register Serena.
+- On Pi the speq workflows run end to end: the skills name Pi's tools (`subagent`, `ask_user_question`, `codemode`, `searchTools`) and route to the `speq-`-prefixed sub-agents.
+- The installer writes and never deletes. It merges each payload over the existing tree, so a file you added under a managed skill or agent directory survives an update, and a stale archive cannot replace the installed tree. The cached embedding model is renamed over rather than deleted first, so a failed download leaves it in place.
+- The installer refuses a release archive that predates it. It names the payload paths the archive lacks and stops before writing anything, instead of installing a partial tree and reporting success.
+
 ## 0.25.0
 
 - `speq search query` prints a notice on stderr when it builds a missing index first.
 - Agents read the accepted ADRs before they plan; ADR text stays short.
 - `/speq:implement-pr` keeps rotation hand-off notes (`notes/`) out of its commits.
 - Plan review treats a plan as small when its verb is `fix`, its decision log has no design decisions, and it has no architecture delta.
-- The installer sets up Pi: it installs the `/skill:speq-*` skills into `~/.agents/skills/`, installs the sub-agents into `~/.pi/agent/agents/speq/`, and offers to register Serena.
-- On Pi the speq workflows run end to end: the skills name Pi's tools (`subagent`, `ask_user_question`, `codemode`, `searchTools`) and route to the `speq-`-prefixed sub-agents.
 
 ## 0.23.0
 

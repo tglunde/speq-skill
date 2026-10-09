@@ -76,6 +76,17 @@ register_codex_plugin() {
     fi
 }
 
+# merge_tree <src> <dest> writes every file under <src> into <dest>, creating
+# directories as needed and overwriting files that already exist. Nothing is
+# removed, so a file the operator added under <dest> survives an update. Every
+# payload the installer places goes through here.
+merge_tree() {
+    local src="$1"
+    local dest="$2"
+    mkdir -p "$dest"
+    cp -R "$src/." "$dest/"
+}
+
 install_codex_skills() {
     local source_dir="$MARKETPLACE_DIR/codex/plugins/speq-skill/skills"
 
@@ -95,15 +106,14 @@ install_codex_skills() {
         target="$CODEX_SKILLS_DIR/speq-$skill_name"
 
         if [[ -L "$target" ]]; then
-            rm -f "$target"
-        elif [[ -d "$target" && -f "$target/.speq-skill-managed" ]]; then
-            rm -rf "$target"
-        elif [[ -e "$target" ]]; then
+            warn "Codex skill is a symlink and is not managed by speq-skill, skipping: $target"
+            continue
+        elif [[ -e "$target" && ! -f "$target/.speq-skill-managed" ]]; then
             warn "Codex skill already exists and is not managed by speq-skill, skipping: $target"
             continue
         fi
 
-        cp -R "$skill_dir" "$target"
+        merge_tree "$skill_dir" "$target"
         touch "$target/.speq-skill-managed"
     done
 
@@ -131,15 +141,14 @@ install_agents_skills() {
         target="$AGENTS_SKILLS_DIR/$(basename "$skill_dir")"
 
         if [[ -L "$target" ]]; then
-            rm -f "$target"
-        elif [[ -d "$target" && -f "$target/.speq-skill-managed" ]]; then
-            rm -rf "$target"
-        elif [[ -e "$target" ]]; then
+            warn "Skill is a symlink and is not managed by speq-skill, skipping: $target"
+            continue
+        elif [[ -e "$target" && ! -f "$target/.speq-skill-managed" ]]; then
             warn "Skill already exists and is not managed by speq-skill, skipping: $target"
             continue
         fi
 
-        cp -R "$skill_dir" "$target"
+        merge_tree "$skill_dir" "$target"
         touch "$target/.speq-skill-managed"
     done
 
@@ -510,8 +519,8 @@ pi_reconcile_overrides() {
 # Pi discovers sub-agents under ~/.pi/agent/agents/. They live in their own
 # directory so one marker file covers the whole install and removal cannot
 # touch an agent the operator wrote. The same directory carries the marker for
-# the model overrides the installer wrote, which is read before the directory
-# is replaced and rewritten after the reconcile.
+# the model overrides the installer wrote, which is read before the payload is
+# merged in and rewritten after the reconcile.
 install_pi_agents() {
     local source_dir="$MARKETPLACE_DIR/pi/agents"
     local previous=""
@@ -536,7 +545,8 @@ install_pi_agents() {
         artifact_ok=0
     fi
 
-    rm -rf "$PI_AGENTS_DIR"
+    # Merge over the existing directory: every payload file is written, and
+    # nothing is removed, so an agent file the operator added survives.
     mkdir -p "$PI_AGENTS_DIR"
     cp "$source_dir"/*.md "$PI_AGENTS_DIR/"
     touch "$PI_AGENTS_DIR/.speq-skill-managed"
@@ -569,9 +579,36 @@ detect_platform() {
     echo "${arch}-${os}"
 }
 
+# Every path a release archive must carry for the install steps below to run.
+# An archive built before a payload was added still downloads and extracts
+# cleanly, so the installer checks the extracted tree before it writes
+# anything. A stale archive then fails loudly instead of reporting success
+# after silently skipping the payloads it lacks.
+REQUIRED_ARCHIVE_PATHS=(
+    "bin/speq"
+    ".claude-plugin/marketplace.json"
+    "plugins/speq-skill"
+    "codex/.agents/plugins/marketplace.json"
+    "codex/plugins/speq-skill"
+    "pi/skills"
+    "pi/agents"
+)
+
+# archive_missing_paths <dir> prints each required path absent from the
+# extracted archive, one per line. No output means the archive is complete.
+archive_missing_paths() {
+    local root="$1"
+    local path
+    for path in "${REQUIRED_ARCHIVE_PATHS[@]}"; do
+        [[ -e "$root/$path" ]] || echo "$path"
+    done
+    return 0
+}
+
 # Download a pre-built release archive and install it directly (no compilation).
 # Returns 0 on success, 1 if no pre-built binary is available for this platform
-# or if the download fails.
+# or if the download fails, and 2 if the archive extracts but lacks a path this
+# installer installs (a release older than the installer).
 install_from_prebuilt() {
     local version="$1"
 
@@ -601,6 +638,18 @@ install_from_prebuilt() {
 
     local extract_dir="$tmp_dir/speq-marketplace-${version}-${platform}"
 
+    # Check before step 2, so an incomplete archive never writes over a
+    # working install.
+    local missing
+    missing=$(archive_missing_paths "$extract_dir")
+    if [[ -n "$missing" ]]; then
+        warn "Release archive ${version} is missing:"
+        while IFS= read -r path; do
+            echo "    $path"
+        done <<< "$missing"
+        return 2
+    fi
+
     step 2 3 "Installing..."
 
     mkdir -p "$INSTALL_DIR"
@@ -608,9 +657,7 @@ install_from_prebuilt() {
     chmod +x "$INSTALL_DIR/speq"
     info "Installed speq to $INSTALL_DIR/speq"
 
-    rm -rf "$MARKETPLACE_DIR"
-    mkdir -p "$MARKETPLACE_DIR"
-    cp -r "$extract_dir/." "$MARKETPLACE_DIR/"
+    merge_tree "$extract_dir" "$MARKETPLACE_DIR"
     info "Installed marketplace to $MARKETPLACE_DIR"
 
     step 3 3 "Registering plugins..."
@@ -686,9 +733,7 @@ build_from_source() {
     info "Installed speq to $INSTALL_DIR/speq"
 
     # Install marketplace (use /. to include hidden files like .claude-plugin)
-    rm -rf "$MARKETPLACE_DIR"
-    mkdir -p "$MARKETPLACE_DIR"
-    cp -r dist/marketplace/. "$MARKETPLACE_DIR/"
+    merge_tree dist/marketplace "$MARKETPLACE_DIR"
     mkdir -p "$MARKETPLACE_DIR/bin"
     cp target/release/speq "$MARKETPLACE_DIR/bin/speq"
     chmod +x "$MARKETPLACE_DIR/bin/speq"
@@ -845,13 +890,9 @@ provision_embedding_model() {
         return 0
     fi
 
-    # Drop any previously provisioned model files so upgrades always get a fresh copy
-    if [[ -d "$MODEL_DIR" ]]; then
-        for filename in "${files[@]}"; do
-            rm -f "$MODEL_DIR/$filename"
-        done
-    fi
-
+    # Each file is downloaded to a temporary path and renamed over the cached
+    # one, so a fresh copy replaces the old without deleting it first: a failed
+    # download leaves the cached model in place.
     info "Provisioning embedding model into $MODEL_DIR..."
     mkdir -p "$MODEL_DIR"
 
@@ -902,7 +943,14 @@ main() {
     echo ""
 
     # Pre-built binary only. The local tarball is the Docker test hook.
-    if ! install_from_prebuilt "$version"; then
+    local prebuilt_status=0
+    install_from_prebuilt "$version" || prebuilt_status=$?
+
+    if [[ $prebuilt_status -eq 2 ]]; then
+        error "The ${version} release archive predates this installer. Install from source: https://github.com/$REPO/blob/main/docs/installation.md#install-from-source"
+    fi
+
+    if [[ $prebuilt_status -ne 0 ]]; then
         if [[ -n "${SPEQ_LOCAL_TARBALL:-}" ]]; then
             build_from_source "$version"
         else

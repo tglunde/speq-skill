@@ -23,60 +23,10 @@ cd "$PROJECT_ROOT"
 
 echo "=== Installing speq-skill ==="
 
-register_codex_plugin() {
-    if [ ! -f "$CODEX_MARKETPLACE_ROOT/.agents/plugins/marketplace.json" ]; then
-        echo "Codex marketplace payload missing, skipping Codex marketplace registration"
-        return
-    fi
-
-    if command -v codex &> /dev/null; then
-        echo "Registering Codex marketplace..."
-        codex plugin marketplace remove "$CODEX_MARKETPLACE_NAME" >/dev/null 2>&1 || true
-        if codex plugin marketplace add "$CODEX_MARKETPLACE_ROOT" >/dev/null 2>&1; then
-            echo "Codex marketplace: ${CODEX_MARKETPLACE_NAME}"
-        else
-            echo "Codex marketplace registration failed."
-            echo "  Run manually: codex plugin marketplace add ${CODEX_MARKETPLACE_ROOT}"
-        fi
-    else
-        echo "Codex CLI not found. Register the marketplace after installing Codex:"
-        echo "  codex plugin marketplace add ${CODEX_MARKETPLACE_ROOT}"
-    fi
-}
-
-install_codex_skills() {
-    local source_dir="${INSTALL_DIR}/codex/plugins/speq-skill/skills"
-
-    if [ ! -d "$source_dir" ]; then
-        echo "Codex skills payload missing, skipping Codex skill installation"
-        return
-    fi
-
-    mkdir -p "$CODEX_SKILLS_DIR"
-
-    for skill_dir in "$source_dir"/*; do
-        [ -d "$skill_dir" ] || continue
-
-        local skill_name
-        local target
-        skill_name="$(basename "$skill_dir")"
-        target="$CODEX_SKILLS_DIR/speq-$skill_name"
-
-        if [ -L "$target" ]; then
-            rm -f "$target"
-        elif [ -d "$target" ] && [ -f "$target/.speq-skill-managed" ]; then
-            rm -rf "$target"
-        elif [ -e "$target" ]; then
-            echo "Codex skill already exists and is not managed by speq-skill, skipping: $target"
-            continue
-        fi
-
-        cp -R "$skill_dir" "$target"
-        touch "$target/.speq-skill-managed"
-    done
-
-    echo "Codex skills: ${CODEX_SKILLS_DIR}"
-}
+# register_codex_plugin, install_codex_skills, install_agents_skills, and
+# install_pi_agents all come from install.sh. They read MARKETPLACE_DIR, which
+# points at the local build, and they only write: no override here may delete
+# from the operator's tree.
 
 # 1. Build release binary if not present
 if [ ! -f "target/release/speq" ]; then
@@ -109,10 +59,9 @@ else
     echo "Claude CLI not found, skipping Claude plugin registration"
 fi
 
-# 5. Install Codex plugin payload and skill copies
-rm -rf "$INSTALL_DIR"
-mkdir -p "$INSTALL_DIR"
-cp -r "dist/marketplace/." "$INSTALL_DIR/"
+# 5. Install Codex plugin payload and skill copies. merge_tree overwrites the
+# payload files and removes nothing.
+merge_tree "$MARKETPLACE_DIR" "$INSTALL_DIR"
 register_codex_plugin
 install_codex_skills
 install_agents_skills

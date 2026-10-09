@@ -16,8 +16,7 @@ use std::process::{Command, Output};
 use tempfile::TempDir;
 
 const CLAUDE_SERENA: &str = "mcp add --scope user serena -- serena start-mcp-server --context claude-code --project-from-cwd --open-web-dashboard false";
-const CODEX_SERENA: &str =
-    "mcp add serena -- serena start-mcp-server --project-from-cwd --context=codex --open-web-dashboard false";
+const CODEX_SERENA: &str = "mcp add serena -- serena start-mcp-server --project-from-cwd --context=codex --open-web-dashboard false";
 
 /// Absolute path to the repository's `install.sh`.
 fn install_script() -> PathBuf {
