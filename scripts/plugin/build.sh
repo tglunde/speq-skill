@@ -17,6 +17,9 @@ CODEX_MARKETPLACE_FILE="$MARKETPLACE_DIR/codex/.agents/plugins/marketplace.json"
 # locations Pi reads, the shared Agent Skills directory and the user agents
 # directory.
 PI_PLUGIN_DIR="$MARKETPLACE_DIR/pi"
+# The routing table is a build input: it never ships in a payload.
+ROUTING_TABLE_RELATIVE="model-routing.yml"
+ROUTING_TABLE="$PROJECT_ROOT/$ROUTING_TABLE_RELATIVE"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -29,6 +32,9 @@ log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
 # get_version reads the release version from Cargo.toml (single source of truth).
 source "$SCRIPT_DIR/../lib/version.sh"
+# routing_load, routing_value, routing_names, routing_note, and
+# routing_check_coverage read the model routing table.
+source "$SCRIPT_DIR/../lib/model-routing.sh"
 
 get_author() {
     grep '^authors' "$PROJECT_ROOT/Cargo.toml" | sed 's/.*\["\([^"]*\)".*/\1/'
@@ -75,6 +81,43 @@ namespace_slash_commands() {
     perl -0pi -e 's{(?<![A-Za-z0-9_./-])/speq-([A-Za-z0-9_-]*)(?=$|[^A-Za-z0-9_/-])}{/speq:$1}g' "$file"
 }
 
+# inject_routing_frontmatter <file> <section> <name> <harness>
+# Inserts one "<key>: <value>" line after the frontmatter's description line
+# for every non-null key of the row's harness map. Claude and Codex carry
+# model plus effort; Pi carries thinking only, because a Pi model id belongs
+# in the generated settings overrides, not in the emitted frontmatter.
+inject_routing_frontmatter() {
+    local file="$1"
+    local section="$2"
+    local name="$3"
+    local harness="$4"
+    local keys
+    local key
+    local value
+    local insert=""
+
+    case "$harness" in
+        pi) keys="thinking" ;;
+        *) keys="model effort" ;;
+    esac
+
+    for key in $keys; do
+        value=$(routing_value "$section" "$name" "$harness" "$key")
+        if [[ -n "$value" ]]; then
+            insert+="$key: $value"$'\n'
+        fi
+    done
+
+    if [[ -z "$insert" ]]; then
+        return 0
+    fi
+    if ! grep -q '^description:' "$file"; then
+        log_error "Routing injection: $file has no description: frontmatter line"
+        exit 1
+    fi
+    ROUTING_INSERT="$insert" perl -0pi -e 's/^(description:[^\n]*\n)/$1$ENV{ROUTING_INSERT}/m' "$file"
+}
+
 transform_common_markdown() {
     local file="$1"
     local source_name="$2"
@@ -108,28 +151,6 @@ transform_codex_markdown() {
     sed_in_place 's/subagent_type=/agent_type=/g' "$file"
 }
 
-set_codex_skill_model() {
-    local file="$1"
-    local skill_name="$2"
-
-    case "$skill_name" in
-        speq-plan|speq-implement|speq-record|speq-plan-pr|speq-implement-pr|speq-audit)
-            sed_in_place 's/^model: sonnet$/model: gpt-5.4/' "$file"
-            if ! grep -q '^effort:' "$file"; then
-                if [[ "$OSTYPE" == "darwin"* ]]; then
-                    sed -i '' '/^model: gpt-5.4$/a\
-effort: medium
-' "$file"
-                else
-                    sed -i '/^model: gpt-5.4$/a effort: medium' "$file"
-                fi
-            fi
-            ;;
-        *)
-            ;;
-    esac
-}
-
 # --- Pi transforms ---------------------------------------------------------
 #
 # Pi reads the shared Agent Skills location, so its copies carry the prefixed
@@ -137,20 +158,10 @@ effort: medium
 # tool names. Pi sub-agents live in a directory of their own and carry the same
 # `speq-` prefix, so they cannot collide with an operator's own agents.
 
-# Agent names the skills route to. Order does not matter: each pattern refuses a
-# match that abuts another name, so `audit-agent` never rewrites the tail of
-# `adr-audit-agent`.
-PI_AGENT_NAMES=(
-    planner-agent
-    plan-reviewer
-    implementer-agent
-    implementer-expert-agent
-    code-reviewer
-    recorder-agent
-    audit-agent
-    adr-audit-agent
-    architecture-agent
-)
+# Agent names the skills route to, derived from the routing table in main().
+# Order does not matter: each pattern refuses a match that abuts another name,
+# so `audit-agent` never rewrites the tail of `adr-audit-agent`.
+PI_AGENT_NAMES=()
 
 # Skills that spawn sub-agents or ask the user questions carry the host note.
 PI_HOST_NOTE_SKILLS=(
@@ -199,6 +210,9 @@ prefix_pi_agent_names() {
     local file="$1"
     local agent
 
+    if [[ ${#PI_AGENT_NAMES[@]} -eq 0 ]]; then
+        return
+    fi
     for agent in "${PI_AGENT_NAMES[@]}"; do
         perl -0pi -e "s{(?<![A-Za-z0-9-])\Q$agent\E(?![A-Za-z0-9-])}{speq-$agent}g" "$file"
     done
@@ -240,27 +254,24 @@ transform_pi_markdown() {
     local target_name="$3"
 
     sed_in_place "s/^name: $source_name$/name: $target_name/" "$file"
-    # Pi skill frontmatter has no model or effort field.
-    sed_in_place '/^model: /d' "$file"
-    sed_in_place '/^effort: /d' "$file"
     transform_pi_phrases "$file"
     transform_pi_tool_names "$file"
     prefix_pi_agent_names "$file"
     namespace_pi_skill_invocations "$file"
 }
 
-# Pi sub-agent frontmatter drops Claude's `model` and `color`, and carries the
-# reasoning level as `thinking`. No model is pinned: Pi model ids are
-# provider-specific, so the operator chooses with subagents.agentOverrides.
+# Pi sub-agent frontmatter drops Claude's `color` and carries the reasoning
+# level as `thinking` from the routing table. No model is pinned: Pi model ids
+# are provider-specific, so the operator chooses with subagents.agentOverrides,
+# which the build's pi/model-overrides.json and the installer propagate.
 transform_pi_agent() {
     local file="$1"
     local source_name="$2"
     local target_name="$3"
 
     sed_in_place "s/^name: $source_name$/name: $target_name/" "$file"
-    sed_in_place 's/^effort: /thinking: /' "$file"
-    sed_in_place '/^model: /d' "$file"
     sed_in_place '/^color: /d' "$file"
+    inject_routing_frontmatter "$file" agents "$source_name" pi
     transform_pi_phrases "$file"
     transform_pi_tool_names "$file"
     prefix_pi_agent_names "$file"
@@ -297,7 +308,9 @@ copy_skill_for_platform() {
                 transform_common_markdown "$file" "$source_name" "$target_name" "$platform"
                 if [[ "$platform" == "codex" ]]; then
                     transform_codex_markdown "$file"
-                    set_codex_skill_model "$file" "$source_name"
+                fi
+                if [[ "$(basename "$file")" == "SKILL.md" ]]; then
+                    inject_routing_frontmatter "$file" skills "$source_name" "$platform"
                 fi
             fi
         done
@@ -318,22 +331,6 @@ copy_skills() {
             copy_skill_for_platform pi "$skill_name"
         fi
     done
-}
-
-set_codex_agent_model() {
-    local file="$1"
-    local filename="$2"
-
-    case "$filename" in
-        planner-agent.md|plan-reviewer.md|implementer-expert-agent.md|code-reviewer.md|audit-agent.md|adr-audit-agent.md|architecture-agent.md)
-            sed_in_place 's/^model: .*/model: gpt-5.5/' "$file"
-            ;;
-        implementer-agent.md|recorder-agent.md)
-            sed_in_place 's/^model: .*/model: gpt-5.4/' "$file"
-            ;;
-        *)
-            ;;
-    esac
 }
 
 copy_agents_for_platform() {
@@ -374,8 +371,8 @@ copy_agents_for_platform() {
 
                 if [[ "$platform" == "codex" ]]; then
                     transform_codex_markdown "$target_file"
-                    set_codex_agent_model "$target_file" "$filename"
                 fi
+                inject_routing_frontmatter "$target_file" agents "$bare_name" "$platform"
             fi
         fi
     done
@@ -408,6 +405,287 @@ stamp_file() {
     sed_in_place "s/AUTHOR_PLACEHOLDER/$author/g" "$file"
 }
 
+# validate_frontmatter_line checks if a frontmatter line contains an unquoted
+# value with `: ` (colon-space), which breaks YAML parsing.
+# Arguments: line, line_number, file_path
+# Returns: 0 if valid, 1 if invalid (prints diagnostic)
+validate_frontmatter_line() {
+    local line="$1"
+    local line_num="$2"
+    local file="$3"
+
+    # Check if line matches frontmatter key pattern: key: value
+    if [[ ! "$line" =~ ^[A-Za-z_-]+:\ .* ]]; then
+        return 0  # Not a key-value line, skip
+    fi
+
+    # Extract value (everything after "key: ")
+    local value="${line#*: }"
+
+    # Strip inline comment: remove trailing " #..." (space-hash-anything)
+    # This handles "value # comment" but not "# inside value"
+    value=$(printf '%s' "$value" | sed 's/[[:space:]]#.*$//')
+
+    # If value starts with " or ', it's quoted - OK
+    if [[ "$value" =~ ^[\"\'] ]]; then
+        return 0
+    fi
+
+    # Check if value contains ": " (colon-space)
+    if [[ "$value" == *": "* ]]; then
+        log_error "Frontmatter guard: $file:$line_num unquoted value contains ': '"
+        log_error "  Value: $value"
+        return 1
+    fi
+
+    return 0
+}
+
+# guard_frontmatter scans all .md files under the given directory for frontmatter
+# values that contain unquoted `: ` sequences.
+# Arguments: directory (defaults to $MARKETPLACE_DIR)
+# Returns: 0 if all files pass, 1 if any file fails
+guard_frontmatter() {
+    local dir="${1:-$MARKETPLACE_DIR}"
+    local failed=0
+
+    if [[ ! -d "$dir" ]]; then
+        log_error "Frontmatter guard: directory does not exist: $dir"
+        return 1
+    fi
+
+    while IFS= read -r -d '' file; do
+        local in_frontmatter=0
+        local line_num=0
+        local frontmatter_start_found=0
+
+        while IFS= read -r line || [[ -n "$line" ]]; do
+            line_num=$((line_num + 1))
+
+            # Track frontmatter boundaries
+            if [[ "$line" == "---" ]]; then
+                if [[ $frontmatter_start_found -eq 0 ]]; then
+                    frontmatter_start_found=1
+                    in_frontmatter=1
+                    continue
+                elif [[ $in_frontmatter -eq 1 ]]; then
+                    # End of frontmatter
+                    break
+                fi
+            fi
+
+            if [[ $in_frontmatter -eq 1 ]]; then
+                if ! validate_frontmatter_line "$line" "$line_num" "$file"; then
+                    failed=1
+                fi
+            fi
+        done < "$file"
+    done < <(find "$dir" -name "*.md" -type f -print0)
+
+    return $failed
+}
+
+# run_guard_self_test creates a temporary fixture with a known-bad frontmatter
+# value, verifies the guard catches it, then removes the fixture.
+# Returns: 0 if self-test passes (guard correctly caught the defect), 1 otherwise
+run_guard_self_test() {
+    local test_dir
+    test_dir=$(mktemp -d)
+    local fixture="$test_dir/_guard_test.md"
+    local result=0
+
+    # Create fixture with known-bad frontmatter
+    cat > "$fixture" << 'EOF'
+---
+name: test-fixture
+description: bad: value
+---
+# Test
+EOF
+
+    log_info "Running frontmatter guard self-test..."
+
+    # Guard should return non-zero for this fixture
+    # Redirect stderr to /dev/null since we expect an error message
+    if guard_frontmatter "$test_dir" >/dev/null 2>&1; then
+        log_error "Frontmatter guard self-test FAILED: guard did not catch bad fixture"
+        result=1
+    else
+        log_info "Frontmatter guard self-test passed"
+    fi
+
+    # Always clean up the test directory
+    rm -rf "$test_dir"
+
+    return $result
+}
+
+# run_routing_self_test writes one fixture per malformed table shape into a
+# temporary directory, verifies routing_load rejects each of them, verifies a
+# well-formed fixture is accepted, then removes the fixtures. It mirrors
+# run_guard_self_test: a validator that silently accepts bad input is worse
+# than no validator, because it lets the drift return unnoticed.
+# Returns: 0 if the self-test passes, 1 otherwise
+run_routing_self_test() {
+    local test_dir
+    local result=0
+    local fixture
+
+    test_dir=$(mktemp -d)
+    log_info "Running routing table validator self-test..."
+
+    printf 'agents:\n\tplanner-agent:\n' > "$test_dir/tab.yml"
+
+    cat > "$test_dir/unknown-section.yml" <<'EOF'
+services:
+  planner-agent:
+EOF
+
+    cat > "$test_dir/unknown-flow-key.yml" <<'EOF'
+agents:
+  planner-agent:
+    file: .claude/agents/planner-agent.md
+    note: fixture
+    claude: { model: opus, temperature: high }
+    codex: {}
+    pi: {}
+skills:
+EOF
+
+    cat > "$test_dir/quoted-value.yml" <<'EOF'
+agents:
+  planner-agent:
+    file: .claude/agents/planner-agent.md
+    note: fixture
+    claude: { model: "opus" }
+    codex: {}
+    pi: {}
+skills:
+EOF
+
+    cat > "$test_dir/row-without-file.yml" <<'EOF'
+agents:
+  planner-agent:
+    note: fixture
+    claude: {}
+    codex: {}
+    pi: {}
+skills:
+EOF
+
+    cat > "$test_dir/valid.yml" <<'EOF'
+agents:
+  planner-agent:
+    file: .claude/agents/planner-agent.md
+    note: fixture
+    claude: { model: opus, effort: xhigh }
+    codex: { model: gpt-5.5, effort: xhigh }
+    pi: { model: null, thinking: xhigh }
+skills:
+  speq-plan:
+    file: .claude/skills/speq-plan/SKILL.md
+    note: fixture
+    claude: { model: sonnet }
+    codex: { model: gpt-5.4, effort: medium }
+    pi: {}
+EOF
+
+    for fixture in tab unknown-section unknown-flow-key quoted-value row-without-file; do
+        if routing_load "$test_dir/$fixture.yml" >/dev/null 2>&1; then
+            log_error "Routing validator self-test FAILED: $fixture.yml was accepted"
+            result=1
+        fi
+    done
+
+    if ! routing_load "$test_dir/valid.yml" >/dev/null 2>&1; then
+        log_error "Routing validator self-test FAILED: a valid table was rejected"
+        result=1
+    fi
+
+    if [[ $result -eq 0 ]]; then
+        log_info "Routing validator self-test passed (5 malformed fixtures rejected, 1 valid accepted)"
+    fi
+
+    rm -rf "$test_dir"
+    return $result
+}
+
+# guard_source_frontmatter fails when a source agent or skill still carries a
+# routing value. Routing lives in the table alone, so a re-added line is the
+# drift the build must stop before it writes an artifact.
+# Returns: 0 if every source frontmatter is clean, 1 otherwise
+guard_source_frontmatter() {
+    local failed=0
+    local file
+    local line
+    local line_num
+    local in_frontmatter
+
+    for file in "$SOURCE_DIR/agents"/*.md "$SOURCE_DIR/skills"/speq-*/SKILL.md; do
+        [[ -f "$file" ]] || continue
+        in_frontmatter=0
+        line_num=0
+
+        while IFS= read -r line || [[ -n "$line" ]]; do
+            line_num=$((line_num + 1))
+            if [[ "$line" == "---" ]]; then
+                if [[ $in_frontmatter -eq 0 ]]; then
+                    in_frontmatter=1
+                    continue
+                fi
+                break
+            fi
+            if [[ $in_frontmatter -eq 1 && "$line" =~ ^(model|effort|thinking): ]]; then
+                log_error "Source routing guard: $file:$line_num carries a routing value"
+                log_error "  $line"
+                log_error "  Move it to $ROUTING_TABLE_RELATIVE"
+                failed=1
+            fi
+        done < "$file"
+    done
+
+    return $failed
+}
+
+# generate_pi_model_overrides writes the Pi payload's model-overrides.json
+# from the table's non-null pi.model values, in table order. The installer
+# reads this artifact and never parses the table.
+generate_pi_model_overrides() {
+    local json="{"
+    local first=1
+    local name
+    local model
+
+    while IFS= read -r name; do
+        model=$(routing_value agents "$name" pi model)
+        if [[ -n "$model" ]]; then
+            if [[ $first -eq 1 ]]; then
+                first=0
+            else
+                json+=", "
+            fi
+            json+="\"speq-$name\": \"$model\""
+        fi
+    done < <(routing_names agents)
+    json+="}"
+
+    printf '%s\n' "$json" > "$PI_PLUGIN_DIR/model-overrides.json"
+    log_info "Pi model overrides: $json"
+}
+
+# assert_no_routing_table_in_payload fails when any payload directory
+# contains the routing table, which is a build input and never a payload file.
+assert_no_routing_table_in_payload() {
+    local matches
+
+    matches=$(find "$MARKETPLACE_DIR" -name "$(basename "$ROUTING_TABLE")" -type f)
+    if [[ -n "$matches" ]]; then
+        log_error "Routing table leaked into the payload: $matches"
+        return 1
+    fi
+    return 0
+}
+
 generate_manifests() {
     local version="$1"
     local author="$2"
@@ -432,6 +710,7 @@ generate_manifests() {
 main() {
     local version
     local author
+    local agent_name
     version=$(get_version)
     author=$(get_author)
 
@@ -443,10 +722,52 @@ main() {
     log_info "Author: $author (from Cargo.toml)"
     echo ""
 
+    # Validate every input before setup_dirs, so no failure path writes an
+    # artifact. A table or source defect stops the build instead of emitting a
+    # half-routed payload.
+    if ! run_routing_self_test; then
+        exit 1
+    fi
+    if ! routing_load "$ROUTING_TABLE"; then
+        log_error "Routing table validation failed: $ROUTING_TABLE_RELATIVE"
+        exit 1
+    fi
+    if ! routing_check_coverage "$SOURCE_DIR"; then
+        log_error "Routing table coverage check failed"
+        exit 1
+    fi
+    log_info "Routing table valid: $(routing_names agents | wc -l | tr -d ' ') agents, $(routing_names skills | wc -l | tr -d ' ') skills"
+    if ! guard_source_frontmatter; then
+        log_error "Source frontmatter guard failed: routing values live in $ROUTING_TABLE_RELATIVE"
+        exit 1
+    fi
+    log_info "Source frontmatter guard passed (no routing values in .claude/)"
+
+    # PI_AGENT_NAMES drives the Pi agent-name prefixing; it comes from the
+    # table so there is no second hardcoded list to drift.
+    PI_AGENT_NAMES=()
+    while IFS= read -r agent_name; do
+        PI_AGENT_NAMES+=("$agent_name")
+    done < <(routing_names agents)
+
     setup_dirs
     copy_skills
     copy_agents
     generate_manifests "$version" "$author"
+    generate_pi_model_overrides
+    assert_no_routing_table_in_payload
+
+    # Run self-test, then guard real content
+    if ! run_guard_self_test; then
+        exit 1
+    fi
+
+    log_info "Running frontmatter guard on marketplace artifacts..."
+    if ! guard_frontmatter "$MARKETPLACE_DIR"; then
+        log_error "Frontmatter guard failed: fix the above errors before publishing"
+        exit 1
+    fi
+    log_info "Frontmatter guard passed (all files clean)"
 
     echo ""
     log_info "Plugin artifacts built successfully!"
@@ -461,7 +782,7 @@ main() {
     log_info "Workflow skills: /speq:plan, /speq:implement, /speq:record, /speq:mission, /speq:audit"
     log_info "Headless PR pipeline: /speq:plan-pr, /speq:implement-pr"
     log_info "Utility skills: /speq:code-tools, /speq:ext-research, /speq:code-guardrails, /speq:design-philosophy, /speq:git-discipline, /speq:cli, /speq:writing-guardrails, /speq:planning, /speq:plan-review, /speq:code-review, /speq:spec-merge, /speq:git-operations, /speq:adr-rules"
-    log_info "Codex model routing: orchestration gpt-5.4/medium, heavy agents gpt-5.5/xhigh, standard implementation gpt-5.4/high, recording gpt-5.4/medium"
+    log_info "Model routing: $ROUTING_TABLE_RELATIVE"
     log_info "Marketplace structure built at: $MARKETPLACE_DIR"
 }
 

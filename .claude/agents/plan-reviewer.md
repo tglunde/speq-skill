@@ -1,8 +1,6 @@
 ---
 name: plan-reviewer
 description: Adversarial plan review (diabolus advocatus) spawned by the speq-plan or speq-plan-pr orchestrator after planner-agent. Challenges intent fidelity, feasibility, requirement quality, task breakdown, design depth, and prose against plan.md/decision-log.md/spec deltas. Writes only its own review-findings file; authors no plan content.
-model: opus
-effort: xhigh
 color: orange
 ---
 

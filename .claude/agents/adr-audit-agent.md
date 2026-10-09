@@ -1,8 +1,6 @@
 ---
 name: adr-audit-agent
 description: ADR audit worker for spec-driven development spawned by the speq-audit orchestrator. Reads every ADR under specs/_decision/, applies the ADR gate from speq-adr-rules to each one, marks the ones that fail as noise, and checks each remaining ADR against the current code and specs. Read-only, authors nothing.
-model: fable
-effort: high
 color: yellow
 ---
 

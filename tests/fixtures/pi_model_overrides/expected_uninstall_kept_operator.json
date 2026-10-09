@@ -1,0 +1,10 @@
+{
+  "subagents" : {
+    "agentOverrides" : {
+      "operator-agent" : {
+        "model" : "operator-model"
+      }
+    }
+  },
+  "theme" : "dark"
+}

@@ -1,0 +1,8 @@
+agents:
+  planner-agent:
+    file: .claude/agents/planner-agent.md
+    note: Fixture row with an unknown flow-map key
+    claude: { model: opus, temperature: high }
+    codex: {}
+    pi: {}
+skills:

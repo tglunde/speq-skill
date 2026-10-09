@@ -1,0 +1,7 @@
+agents:
+  planner-agent:
+    file: .claude/agents/planner-agent.md
+    claude: {}
+    codex: {}
+    pi: {}
+skills:

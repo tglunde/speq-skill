@@ -11,6 +11,8 @@ CODEX_LEGACY_MARKETPLACE_FILE="$HOME/.agents/plugins/marketplace.json"
 CODEX_SKILLS_DIR="${CODEX_HOME:-$HOME/.codex}/skills"
 AGENTS_SKILLS_DIR="$HOME/.agents/skills"
 PI_AGENTS_DIR="$HOME/.pi/agent/agents/speq"
+PI_SETTINGS_FILE="$HOME/.pi/agent/settings.json"
+PI_OVERRIDES_MARKER="$PI_AGENTS_DIR/.speq-model-overrides"
 
 # Colors
 RED='\033[0;31m'
@@ -132,15 +134,205 @@ remove_agents_skills() {
     info "Removed $removed Agent Skills installation(s) from $AGENTS_SKILLS_DIR"
 }
 
+# pi_json_writer_available reports whether perl can load its core JSON::PP
+# module. The uninstaller degrades to a printed list of entries to remove when
+# it cannot, so it never half-writes settings.json.
+pi_json_writer_available() {
+    command -v perl >/dev/null 2>&1 || return 1
+    perl -MJSON::PP -e "1" >/dev/null 2>&1
+}
+
+# pi_update_settings applies "set<TAB>name<TAB>model" and "remove<TAB>name"
+# operations from stdin to the settings document at $1 with perl's core
+# JSON::PP module. It preserves every other key at every level, drops
+# subagents.agentOverrides and subagents when a removal empties them,
+# serializes with sorted keys and a two-space indent, and writes only when the
+# serialized document differs from the file. The update goes through a
+# temporary file and a rename, so a failed write leaves the original
+# byte-identical. Exit status: 0 on success or no change, 3 when the document
+# is invalid JSON, other non-zero when the document cannot be read or written.
+# The same helper shape lives in install.sh.
+pi_update_settings() {
+    perl -MJSON::PP -e '
+        use strict;
+        use warnings;
+
+        my $path = shift @ARGV;
+
+        my @ops;
+        while (my $line = <STDIN>) {
+            chomp $line;
+            next if $line eq "";
+            my @fields = split /\t/, $line, 3;
+            my $action = @fields > 0 ? $fields[0] : "";
+            my $name   = @fields > 1 ? $fields[1] : "";
+            next if $name eq "";
+            if ($action eq "set" && @fields > 2) {
+                push @ops, [ "set", $name, $fields[2] ];
+            }
+            elsif ($action eq "remove") {
+                push @ops, [ "remove", $name ];
+            }
+        }
+
+        my $exists = -e $path;
+        my $original = "";
+        my $data;
+        if ($exists) {
+            open my $in, "<", $path or die "cannot read $path: $!\n";
+            binmode $in;
+            local $/;
+            $original = <$in>;
+            close $in;
+            $data = eval { JSON::PP->new->utf8->decode($original) };
+            if ($@ || ref($data) ne "HASH") {
+                print STDERR "invalid JSON\n";
+                exit 3;
+            }
+        }
+        else {
+            $data = {};
+        }
+
+        my $removed = 0;
+        my $sets = 0;
+        for my $op (@ops) {
+            my ($action, $name, $model) = @$op;
+            if ($action eq "remove") {
+                next unless ref($data->{subagents}) eq "HASH";
+                next unless ref($data->{subagents}{agentOverrides}) eq "HASH";
+                if (exists $data->{subagents}{agentOverrides}{$name}) {
+                    delete $data->{subagents}{agentOverrides}{$name};
+                    $removed++;
+                }
+                next;
+            }
+            if (exists $data->{subagents} && ref($data->{subagents}) ne "HASH") {
+                print STDERR "subagents is not a JSON object; skipping $name\n";
+                next;
+            }
+            $data->{subagents} = {} unless exists $data->{subagents};
+            if (exists $data->{subagents}{agentOverrides} && ref($data->{subagents}{agentOverrides}) ne "HASH") {
+                print STDERR "subagents.agentOverrides is not a JSON object; skipping $name\n";
+                next;
+            }
+            $data->{subagents}{agentOverrides} = {} unless exists $data->{subagents}{agentOverrides};
+            my $entry = $data->{subagents}{agentOverrides}{$name};
+            if (exists $data->{subagents}{agentOverrides}{$name} && ref($entry) ne "HASH") {
+                print STDERR "subagents.agentOverrides.$name is not a JSON object; skipping\n";
+                next;
+            }
+            $data->{subagents}{agentOverrides}{$name} = {} unless exists $data->{subagents}{agentOverrides}{$name};
+            $data->{subagents}{agentOverrides}{$name}{model} = $model;
+            $sets++;
+        }
+
+        if ($removed) {
+            if (ref($data->{subagents}) eq "HASH"
+                && ref($data->{subagents}{agentOverrides}) eq "HASH"
+                && !keys %{$data->{subagents}{agentOverrides}}) {
+                delete $data->{subagents}{agentOverrides};
+            }
+            if (ref($data->{subagents}) eq "HASH" && !keys %{$data->{subagents}}) {
+                delete $data->{subagents};
+            }
+        }
+
+        exit 0 if !$exists && $sets == 0;
+
+        my $codec = JSON::PP->new->canonical->utf8->pretty->indent_length(2);
+        my $output = $codec->encode($data);
+        $output .= "\n" unless $output =~ /\n$/;
+
+        exit 0 if $exists && $output eq $original;
+
+        my $tmp = "$path.speq-tmp.$$";
+        my $mode;
+        if ($exists) {
+            my @st = stat $path;
+            $mode = $st[2] & 07777 if @st;
+        }
+        open my $out, ">", $tmp or do {
+            print STDERR "cannot create $tmp: $!\n";
+            exit 4;
+        };
+        binmode $out;
+        print {$out} $output or do {
+            close $out;
+            unlink $tmp;
+            print STDERR "cannot write $tmp: $!\n";
+            exit 4;
+        };
+        close $out or do {
+            unlink $tmp;
+            print STDERR "cannot write $tmp: $!\n";
+            exit 4;
+        };
+        chmod $mode, $tmp if defined $mode;
+        rename $tmp, $path or do {
+            unlink $tmp;
+            print STDERR "cannot replace $path: $!\n";
+            exit 4;
+        };
+        exit 0;
+    ' -- "$1"
+}
+
+# pi_remove_overrides removes the marker's names from settings.json. It never
+# creates the file, and it degrades to a printed list when perl or JSON::PP is
+# unavailable. It always returns 0: a settings problem never fails the
+# uninstall.
+pi_remove_overrides() {
+    local names="$1"
+    local name ops="" status=0
+
+    [[ -n "$names" ]] || return 0
+
+    # Nothing to remove when the file does not exist; never create it.
+    [[ -f "$PI_SETTINGS_FILE" ]] || return 0
+
+    if ! pi_json_writer_available; then
+        warn "perl with JSON::PP is unavailable; remove these entries from $PI_SETTINGS_FILE manually:"
+        while IFS= read -r name; do
+            [[ -n "$name" ]] || continue
+            echo "  subagents.agentOverrides.$name"
+        done <<< "$names"
+        return 0
+    fi
+
+    while IFS= read -r name; do
+        [[ -n "$name" ]] || continue
+        ops+="remove"$'\t'"$name"$'\n'
+    done <<< "$names"
+
+    printf '%s' "$ops" | pi_update_settings "$PI_SETTINGS_FILE" || status=$?
+    case "$status" in
+        0) : ;;
+        3) warn "$PI_SETTINGS_FILE is not valid JSON; leaving it untouched" ;;
+        *) warn "Failed to update $PI_SETTINGS_FILE; leaving it untouched" ;;
+    esac
+    return 0
+}
+
 # Pi sub-agents. The marker file lives inside the speq-owned directory, so an
-# agent the operator wrote outside it is never removed.
+# agent the operator wrote outside it is never removed. The marker is read
+# before the directory is removed and lists the settings.json overrides the
+# installer wrote, which are removed with it.
 remove_pi_agents() {
+    local previous=""
+
+    if [[ -f "$PI_OVERRIDES_MARKER" ]]; then
+        previous=$(cat "$PI_OVERRIDES_MARKER")
+    fi
+
     if [[ -d "$PI_AGENTS_DIR" && -f "$PI_AGENTS_DIR/.speq-skill-managed" ]]; then
         rm -rf "$PI_AGENTS_DIR"
         info "Removed Pi sub-agents from $PI_AGENTS_DIR"
     else
         warn "Pi sub-agents not found, skipping Pi agent removal"
     fi
+
+    pi_remove_overrides "$previous"
 }
 
 main() {

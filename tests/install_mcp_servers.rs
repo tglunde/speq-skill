@@ -15,9 +15,9 @@ use std::process::{Command, Output};
 
 use tempfile::TempDir;
 
-const CLAUDE_SERENA: &str = "mcp add --scope user serena -- serena start-mcp-server --context claude-code --project-from-cwd";
+const CLAUDE_SERENA: &str = "mcp add --scope user serena -- serena start-mcp-server --context claude-code --project-from-cwd --open-web-dashboard false";
 const CODEX_SERENA: &str =
-    "mcp add serena -- serena start-mcp-server --project-from-cwd --context=codex";
+    "mcp add serena -- serena start-mcp-server --project-from-cwd --context=codex --open-web-dashboard false";
 
 /// Absolute path to the repository's `install.sh`.
 fn install_script() -> PathBuf {
@@ -613,6 +613,27 @@ fn offer_continues_when_codex_add_fails() {
         out.contains(&format!("codex {CODEX_SERENA}")),
         "expected the manual command: {out}"
     );
+}
+
+/// The dashboard is available on demand, but it must never open a browser
+/// window on its own: the harness starts Serena once per session.
+#[test]
+fn every_serena_registration_suppresses_the_dashboard_browser() {
+    let output = run_function(
+        "printf '%s\\n' \"$CLAUDE_SERENA_ADD\" \"$CODEX_SERENA_ADD\" \"$PI_SERENA_ADD\"",
+        "/usr/bin:/bin",
+        &[],
+    );
+
+    assert_success(&output, "print the serena commands");
+    let out = stdout(&output);
+    assert_eq!(out.lines().count(), 3, "stdout: {out}");
+    for command in out.lines() {
+        assert!(
+            command.contains("--open-web-dashboard false"),
+            "this registration would open a browser window: {command}"
+        );
+    }
 }
 
 #[test]

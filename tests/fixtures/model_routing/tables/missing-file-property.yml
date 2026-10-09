@@ -1,0 +1,7 @@
+agents:
+  planner-agent:
+    note: Fixture row without a file: property
+    claude: {}
+    codex: {}
+    pi: {}
+skills:

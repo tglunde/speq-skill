@@ -1,0 +1,228 @@
+# Model routing table.
+#
+# This file is the only place model, effort, and thinking values live. It is a
+# build input and never ships in a plugin payload.
+#
+# Restricted subset: section headers at column 0, rows at 2 spaces, plain
+# properties at 4 spaces, and one-level inline maps. Tabs, quoted scalars,
+# nested maps, and any other syntax fail the build with file, line, and
+# offending content. See scripts/lib/model-routing.sh for the validator and
+# specs/_plans/add-model-routing-table/plan.md for the grammar contract.
+#
+# Each row names its source file, a one-line note for the generated docs
+# tables, and one map per harness. An empty map (`{}`) injects nothing and
+# lets that harness inherit its default. `pi.model` is null unless a model is
+# deliberately pinned; a non-null value reaches the operator's Pi settings
+# through the generated pi/model-overrides.json.
+
+agents:
+  planner-agent:
+    file: .claude/agents/planner-agent.md
+    note: Spec deltas, context, task decomposition
+    claude: { model: opus, effort: xhigh }
+    codex: { model: gpt-5.5, effort: xhigh }
+    pi: { model: null, thinking: xhigh }
+
+  plan-reviewer:
+    file: .claude/agents/plan-reviewer.md
+    note: Adversarial plan review
+    claude: { model: opus, effort: xhigh }
+    codex: { model: gpt-5.5, effort: xhigh }
+    pi: { model: null, thinking: xhigh }
+
+  implementer-agent:
+    file: .claude/agents/implementer-agent.md
+    note: Standard implementation tasks
+    claude: { model: sonnet, effort: high }
+    codex: { model: gpt-5.4, effort: high }
+    pi: { model: null, thinking: high }
+
+  implementer-expert-agent:
+    file: .claude/agents/implementer-expert-agent.md
+    note: Tasks tagged `[expert]`
+    claude: { model: opus, effort: xhigh }
+    codex: { model: gpt-5.5, effort: xhigh }
+    pi: { model: null, thinking: xhigh }
+
+  code-reviewer:
+    file: .claude/agents/code-reviewer.md
+    note: Adversarial implementation review
+    claude: { model: opus, effort: xhigh }
+    codex: { model: gpt-5.5, effort: xhigh }
+    pi: { model: null, thinking: xhigh }
+
+  audit-agent:
+    file: .claude/agents/audit-agent.md
+    note: Mission ↔ spec-library sync
+    claude: { model: opus, effort: high }
+    codex: { model: gpt-5.5, effort: high }
+    pi: { model: null, thinking: high }
+
+  architecture-agent:
+    file: .claude/agents/architecture-agent.md
+    note: Brownfield draft of `specs/architecture.md` for `/speq:mission`
+    claude: { model: opus, effort: high }
+    codex: { model: gpt-5.5, effort: high }
+    pi: { model: null, thinking: high }
+
+  adr-audit-agent:
+    file: .claude/agents/adr-audit-agent.md
+    note: ADR noise and accuracy review
+    claude: { model: fable, effort: high }
+    codex: { model: gpt-5.5, effort: high }
+    pi: { model: null, thinking: high }
+
+  recorder-agent:
+    file: .claude/agents/recorder-agent.md
+    note: Deterministic spec merge and archive
+    claude: { model: sonnet, effort: medium }
+    codex: { model: gpt-5.4, effort: medium }
+    pi: { model: null, thinking: medium }
+
+  ghost-agent:
+    file: .claude/agents/ghost-agent.md
+    note: Fixture row with no matching source file
+    claude: {}
+    codex: {}
+    pi: {}
+
+skills:
+  speq-plan:
+    file: .claude/skills/speq-plan/SKILL.md
+    note: Thin orchestration
+    claude: { model: sonnet }
+    codex: { model: gpt-5.4, effort: medium }
+    pi: {}
+
+  speq-implement:
+    file: .claude/skills/speq-implement/SKILL.md
+    note: Thin orchestration
+    claude: { model: sonnet }
+    codex: { model: gpt-5.4, effort: medium }
+    pi: {}
+
+  speq-record:
+    file: .claude/skills/speq-record/SKILL.md
+    note: Thin orchestration
+    claude: { model: sonnet }
+    codex: { model: gpt-5.4, effort: medium }
+    pi: {}
+
+  speq-mission:
+    file: .claude/skills/speq-mission/SKILL.md
+    note: Interactive bootstrap
+    claude: {}
+    codex: {}
+    pi: {}
+
+  speq-plan-pr:
+    file: .claude/skills/speq-plan-pr/SKILL.md
+    note: Thin orchestration (headless)
+    claude: { model: sonnet }
+    codex: { model: gpt-5.4, effort: medium }
+    pi: {}
+
+  speq-implement-pr:
+    file: .claude/skills/speq-implement-pr/SKILL.md
+    note: Thin orchestration (headless)
+    claude: { model: sonnet }
+    codex: { model: gpt-5.4, effort: medium }
+    pi: {}
+
+  speq-audit:
+    file: .claude/skills/speq-audit/SKILL.md
+    note: Thin orchestration (health check)
+    claude: { model: sonnet }
+    codex: { model: gpt-5.4, effort: medium }
+    pi: {}
+
+  speq-adr-rules:
+    file: .claude/skills/speq-adr-rules/SKILL.md
+    note: Reference material for the caller
+    claude: {}
+    codex: {}
+    pi: {}
+
+  speq-cli:
+    file: .claude/skills/speq-cli/SKILL.md
+    note: Reference material for the caller
+    claude: {}
+    codex: {}
+    pi: {}
+
+  speq-code-guardrails:
+    file: .claude/skills/speq-code-guardrails/SKILL.md
+    note: Reference material for the caller
+    claude: {}
+    codex: {}
+    pi: {}
+
+  speq-code-review:
+    file: .claude/skills/speq-code-review/SKILL.md
+    note: Reference material for the caller
+    claude: {}
+    codex: {}
+    pi: {}
+
+  speq-code-tools:
+    file: .claude/skills/speq-code-tools/SKILL.md
+    note: Reference material for the caller
+    claude: {}
+    codex: {}
+    pi: {}
+
+  speq-design-philosophy:
+    file: .claude/skills/speq-design-philosophy/SKILL.md
+    note: Reference material for the caller
+    claude: {}
+    codex: {}
+    pi: {}
+
+  speq-ext-research:
+    file: .claude/skills/speq-ext-research/SKILL.md
+    note: Reference material for the caller
+    claude: {}
+    codex: {}
+    pi: {}
+
+  speq-git-discipline:
+    file: .claude/skills/speq-git-discipline/SKILL.md
+    note: Reference material for the caller
+    claude: {}
+    codex: {}
+    pi: {}
+
+  speq-git-operations:
+    file: .claude/skills/speq-git-operations/SKILL.md
+    note: Reference material for the caller
+    claude: {}
+    codex: {}
+    pi: {}
+
+  speq-plan-review:
+    file: .claude/skills/speq-plan-review/SKILL.md
+    note: Reference material for the caller
+    claude: {}
+    codex: {}
+    pi: {}
+
+  speq-planning:
+    file: .claude/skills/speq-planning/SKILL.md
+    note: Reference material for the caller
+    claude: {}
+    codex: {}
+    pi: {}
+
+  speq-spec-merge:
+    file: .claude/skills/speq-spec-merge/SKILL.md
+    note: Reference material for the caller
+    claude: {}
+    codex: {}
+    pi: {}
+
+  speq-writing-guardrails:
+    file: .claude/skills/speq-writing-guardrails/SKILL.md
+    note: Reference material for the caller
+    claude: {}
+    codex: {}
+    pi: {}

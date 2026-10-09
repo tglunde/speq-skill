@@ -24,15 +24,24 @@ The installer asks before it installs Serena. It skips Serena when it is already
 
 ```bash
 uv tool install -p 3.13 serena-agent
-claude mcp add --scope user serena -- serena start-mcp-server --context claude-code --project-from-cwd
+claude mcp add --scope user serena -- serena start-mcp-server --context claude-code --project-from-cwd --open-web-dashboard false
 ```
 
 **Codex**
 
 ```bash
 uv tool install -p 3.13 serena-agent
-codex mcp add serena -- serena start-mcp-server --project-from-cwd --context=codex
+codex mcp add serena -- serena start-mcp-server --project-from-cwd --context=codex --open-web-dashboard false
 ```
+
+**Pi**
+
+```bash
+uv tool install -p 3.13 serena-agent
+pi mcp add serena -- serena start-mcp-server --project-from-cwd --context=ide --open-web-dashboard false
+```
+
+`--open-web-dashboard false` keeps the dashboard but stops Serena from opening a browser window each time your agent starts a session. Open it yourself at `http://localhost:24282/dashboard/` when you want it.
 
 See the [Serena documentation](https://github.com/oraios/serena) for advanced configuration.
 

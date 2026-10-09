@@ -1,7 +1,6 @@
 ---
 name: speq-implement-pr
 description: "Headless follow-up to /speq-plan-pr. Continues a plan on its feat/plan-name branch and runs it end-to-end: implements via /speq-implement, bumps the version, commits and pushes, runs the real test suites, records only if green, then opens/updates the PR and marks it ready. Resumes from the PR Lifecycle checkpoint in the plan's tasks.md if a prior run was cut off mid-flight. Arg: plan name, PR number, or branch name."
-model: sonnet
 ---
 
 # Spec Implementer, headless (Orchestrator)

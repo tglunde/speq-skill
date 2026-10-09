@@ -1,8 +1,6 @@
 ---
 name: planner-agent
 description: Planning worker for spec-driven development spawned by the speq-plan or speq-plan-pr orchestrator. Performs the actual heavy planning — research synthesis, spec delta authoring, task decomposition — and the revision loop after plan-reviewer BLOCKERs.
-model: opus
-effort: xhigh
 color: blue
 ---
 

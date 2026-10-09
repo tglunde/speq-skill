@@ -10,15 +10,26 @@ MARKETPLACE_DIR="$HOME/.speq-skill"
 CODEX_MARKETPLACE_NAME="speq-skill-local"
 CODEX_MARKETPLACE_ROOT="$MARKETPLACE_DIR/codex"
 CODEX_SKILLS_DIR="${CODEX_HOME:-$HOME/.codex}/skills"
-CODEX_SERENA_ADD="codex mcp add serena -- serena start-mcp-server --project-from-cwd --context=codex"
-CLAUDE_SERENA_ADD="claude mcp add --scope user serena -- serena start-mcp-server --context claude-code --project-from-cwd"
+# `--open-web-dashboard false` keeps Serena's dashboard available but stops it
+# from opening a browser window every time the harness starts a session.
+CODEX_SERENA_ADD="codex mcp add serena -- serena start-mcp-server --project-from-cwd --context=codex --open-web-dashboard false"
+CLAUDE_SERENA_ADD="claude mcp add --scope user serena -- serena start-mcp-server --context claude-code --project-from-cwd --open-web-dashboard false"
 # Pi has no dedicated Serena context; `ide` is the generic coding-agent one.
-PI_SERENA_ADD="pi mcp add serena -- serena start-mcp-server --project-from-cwd --context=ide"
+PI_SERENA_ADD="pi mcp add serena -- serena start-mcp-server --project-from-cwd --context=ide --open-web-dashboard false"
 # Pi reads the shared Agent Skills location. The installer writes Pi's own
 # copies there, and its sub-agents into the directory Pi discovers.
 AGENTS_SKILLS_DIR="$HOME/.agents/skills"
 PI_AGENTS_DIR="$HOME/.pi/agent/agents/speq"
 PI_MCP_CONFIG="$HOME/.pi/agent/mcp.json"
+PI_SETTINGS_FILE="$HOME/.pi/agent/settings.json"
+# The Pi provider configuration files pi_provider_is_configured reads. Pi names
+# a provider at the top level of its credential store and its catalog cache,
+# and under `providers` in the operator's own model declarations.
+PI_AUTH_FILE="$HOME/.pi/agent/auth.json"
+PI_MODELS_FILE="$HOME/.pi/agent/models.json"
+PI_MODELS_STORE_FILE="$HOME/.pi/agent/models-store.json"
+PI_OVERRIDES_ARTIFACT="$MARKETPLACE_DIR/pi/model-overrides.json"
+PI_OVERRIDES_MARKER="$PI_AGENTS_DIR/.speq-model-overrides"
 SERENA_CLI_INSTALL="uv tool install -p 3.13 serena-agent"
 
 # Colors
@@ -135,11 +146,377 @@ install_agents_skills() {
     info "Installed Agent Skills into $AGENTS_SKILLS_DIR (Pi: /skill:speq-*)"
 }
 
+# pi_json_writer_available reports whether perl can load its core JSON::PP
+# module. Both the installer and the uninstaller degrade to a printed snippet
+# when it cannot, so neither ever half-writes settings.json.
+pi_json_writer_available() {
+    command -v perl >/dev/null 2>&1 || return 1
+    perl -MJSON::PP -e "1" >/dev/null 2>&1
+}
+
+# pi_update_settings applies "set<TAB>name<TAB>model" and "remove<TAB>name"
+# operations from stdin to the settings document at $1 with perl's core
+# JSON::PP module. It preserves every other key at every level, serializes with
+# sorted keys and a two-space indent, and writes only when the serialized
+# document differs from the file. The update goes through a temporary file and
+# a rename, so a failed write leaves the original byte-identical. Exit status:
+# 0 on success or no change, 3 when the document is invalid JSON, other
+# non-zero when the document cannot be read or written. The same helper shape
+# lives in uninstall.sh.
+pi_update_settings() {
+    perl -MJSON::PP -e '
+        use strict;
+        use warnings;
+
+        my $path = shift @ARGV;
+
+        my @ops;
+        while (my $line = <STDIN>) {
+            chomp $line;
+            next if $line eq "";
+            my @fields = split /\t/, $line, 3;
+            my $action = @fields > 0 ? $fields[0] : "";
+            my $name   = @fields > 1 ? $fields[1] : "";
+            next if $name eq "";
+            if ($action eq "set" && @fields > 2) {
+                push @ops, [ "set", $name, $fields[2] ];
+            }
+            elsif ($action eq "remove") {
+                push @ops, [ "remove", $name ];
+            }
+        }
+
+        my $exists = -e $path;
+        my $original = "";
+        my $data;
+        if ($exists) {
+            open my $in, "<", $path or die "cannot read $path: $!\n";
+            binmode $in;
+            local $/;
+            $original = <$in>;
+            close $in;
+            $data = eval { JSON::PP->new->utf8->decode($original) };
+            if ($@ || ref($data) ne "HASH") {
+                print STDERR "invalid JSON\n";
+                exit 3;
+            }
+        }
+        else {
+            $data = {};
+        }
+
+        my $removed = 0;
+        my $sets = 0;
+        for my $op (@ops) {
+            my ($action, $name, $model) = @$op;
+            if ($action eq "remove") {
+                next unless ref($data->{subagents}) eq "HASH";
+                next unless ref($data->{subagents}{agentOverrides}) eq "HASH";
+                if (exists $data->{subagents}{agentOverrides}{$name}) {
+                    delete $data->{subagents}{agentOverrides}{$name};
+                    $removed++;
+                }
+                next;
+            }
+            if (exists $data->{subagents} && ref($data->{subagents}) ne "HASH") {
+                print STDERR "subagents is not a JSON object; skipping $name\n";
+                next;
+            }
+            $data->{subagents} = {} unless exists $data->{subagents};
+            if (exists $data->{subagents}{agentOverrides} && ref($data->{subagents}{agentOverrides}) ne "HASH") {
+                print STDERR "subagents.agentOverrides is not a JSON object; skipping $name\n";
+                next;
+            }
+            $data->{subagents}{agentOverrides} = {} unless exists $data->{subagents}{agentOverrides};
+            my $entry = $data->{subagents}{agentOverrides}{$name};
+            if (exists $data->{subagents}{agentOverrides}{$name} && ref($entry) ne "HASH") {
+                print STDERR "subagents.agentOverrides.$name is not a JSON object; skipping\n";
+                next;
+            }
+            $data->{subagents}{agentOverrides}{$name} = {} unless exists $data->{subagents}{agentOverrides}{$name};
+            $data->{subagents}{agentOverrides}{$name}{model} = $model;
+            $sets++;
+        }
+
+        if ($removed) {
+            if (ref($data->{subagents}) eq "HASH"
+                && ref($data->{subagents}{agentOverrides}) eq "HASH"
+                && !keys %{$data->{subagents}{agentOverrides}}) {
+                delete $data->{subagents}{agentOverrides};
+            }
+            if (ref($data->{subagents}) eq "HASH" && !keys %{$data->{subagents}}) {
+                delete $data->{subagents};
+            }
+        }
+
+        exit 0 if !$exists && $sets == 0;
+
+        my $codec = JSON::PP->new->canonical->utf8->pretty->indent_length(2);
+        my $output = $codec->encode($data);
+        $output .= "\n" unless $output =~ /\n$/;
+
+        exit 0 if $exists && $output eq $original;
+
+        my $tmp = "$path.speq-tmp.$$";
+        my $mode;
+        if ($exists) {
+            my @st = stat $path;
+            $mode = $st[2] & 07777 if @st;
+        }
+        open my $out, ">", $tmp or do {
+            print STDERR "cannot create $tmp: $!\n";
+            exit 4;
+        };
+        binmode $out;
+        print {$out} $output or do {
+            close $out;
+            unlink $tmp;
+            print STDERR "cannot write $tmp: $!\n";
+            exit 4;
+        };
+        close $out or do {
+            unlink $tmp;
+            print STDERR "cannot write $tmp: $!\n";
+            exit 4;
+        };
+        chmod $mode, $tmp if defined $mode;
+        rename $tmp, $path or do {
+            unlink $tmp;
+            print STDERR "cannot replace $path: $!\n";
+            exit 4;
+        };
+        exit 0;
+    ' -- "$1"
+}
+
+# pi_artifact_pins prints one "name<TAB>model" line per override in the
+# generated artifact. It returns non-zero when the file exists but is not a
+# flat object of quoted string pairs, so a malformed payload never rewrites
+# the operator's entries.
+pi_artifact_pins() {
+    local artifact="$1"
+
+    [[ -f "$artifact" ]] || return 0
+
+    awk '
+        { buf = buf $0 }
+        END {
+            gsub(/^[[:space:]]+/, "", buf)
+            gsub(/[[:space:]]+$/, "", buf)
+            if (buf == "" || buf == "{}") exit 0
+            if (substr(buf, 1, 1) != "{" || substr(buf, length(buf), 1) != "}") exit 1
+            inner = substr(buf, 2, length(buf) - 2)
+            count = split(inner, pairs, /[[:space:]]*,[[:space:]]*/)
+            for (i = 1; i <= count; i++) {
+                pair = pairs[i]
+                if (pair ~ /^[[:space:]]*$/) continue
+                if (pair !~ /^[[:space:]]*"[^"]*"[[:space:]]*:[[:space:]]*"[^"]*"[[:space:]]*$/) exit 1
+                key = pair
+                sub(/^[[:space:]]*"/, "", key)
+                sub(/".*$/, "", key)
+                value = pair
+                sub(/^[^:]*:[[:space:]]*"/, "", value)
+                sub(/"[[:space:]]*$/, "", value)
+                print key "\t" value
+            }
+        }
+    ' "$artifact"
+}
+
+# pi_list_contains returns 0 when $2 is one of the newline-separated names in $1.
+pi_list_contains() {
+    local names="$1"
+    local name="$2"
+
+    [[ -n "$names" ]] || return 1
+    printf '%s\n' "$names" | grep -qxF -- "$name"
+}
+
+# pi_write_marker records the override names the installer owns. An empty set
+# writes an empty marker, so a later install knows the previous set is gone.
+pi_write_marker() {
+    if [[ -n "$1" ]]; then
+        printf '%s\n' "$1" > "$PI_OVERRIDES_MARKER"
+    else
+        : > "$PI_OVERRIDES_MARKER"
+    fi
+}
+
+# pi_print_override_json prints the settings fragment an operator can paste
+# when perl or JSON::PP is unavailable.
+pi_print_override_json() {
+    local pins="$1"
+    local name model sep=""
+
+    echo "{"
+    echo "  \"subagents\": {"
+    echo "    \"agentOverrides\": {"
+    while IFS=$'\t' read -r name model; do
+        [[ -n "$name" ]] || continue
+        printf '%s      "%s": { "model": "%s" }' "$sep" "$name" "$model"
+        sep=$',\n'
+    done <<< "$pins"
+    echo ""
+    echo "    }"
+    echo "  }"
+    echo "}"
+}
+
+# pi_provider_is_configured returns 0 when the operator's Pi configuration
+# names $1 as a provider: as a top-level key of the credential store or the
+# catalog cache, or under `providers` in the operator's own model
+# declarations. It returns 1 when no such file exists, when the provider is
+# absent from all of them, and when a file cannot be read or decoded. A caller
+# therefore skips a pin it cannot verify rather than writing one the operator
+# cannot run.
+pi_provider_is_configured() {
+    local provider="$1"
+    local file
+
+    [[ -n "$provider" ]] || return 1
+
+    for file in "$PI_AUTH_FILE" "$PI_MODELS_FILE" "$PI_MODELS_STORE_FILE"; do
+        [[ -f "$file" ]] || continue
+        if perl -MJSON::PP -e '
+            use strict;
+            use warnings;
+
+            my $path = shift @ARGV;
+            my $provider = shift @ARGV;
+
+            open my $in, "<", $path or exit 1;
+            binmode $in;
+            local $/;
+            my $text = <$in>;
+            close $in;
+
+            my $data = eval { JSON::PP->new->utf8->decode($text) };
+            exit 1 if $@ || ref($data) ne "HASH";
+            exit 0 if exists $data->{$provider};
+            exit 0 if ref($data->{providers}) eq "HASH"
+                && exists $data->{providers}{$provider};
+            exit 1;
+        ' -- "$file" "$provider" 2>/dev/null; then
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+# pi_reconcile_overrides applies the artifact's pins to the operator's
+# settings.json, removes the previous marker's names the artifact no longer
+# pins, and rewrites the marker. $1 = previous marker contents, $2 = pins
+# ("name<TAB>model" lines).
+pi_reconcile_overrides() {
+    local previous="$1"
+    local pins="$2"
+    local names removes ops name model provider filtered status writer_ok=0
+
+    if pi_json_writer_available; then
+        writer_ok=1
+    fi
+
+    # A provider-qualified pin reaches settings.json only when the operator
+    # has that provider configured, so the shipped table's vendor choices
+    # never land on an operator who cannot run them. Filtering here, before
+    # the marker names are derived, means a pin skipped this way also removes
+    # the override an earlier install wrote for it. A bare model id names no
+    # provider and is never gated. The check needs perl, the same dependency
+    # the write below needs, so an operator without it keeps the previous
+    # behavior: every pin is offered as a manual instruction.
+    if [[ $writer_ok -eq 1 ]]; then
+        filtered=""
+        while IFS=$'\t' read -r name model; do
+            [[ -n "$name" ]] || continue
+            case "$model" in
+                */*)
+                    provider="${model%%/*}"
+                    if ! pi_provider_is_configured "$provider"; then
+                        warn "Skipping the $name override: provider '$provider' is not configured for Pi"
+                        continue
+                    fi
+                    ;;
+            esac
+            filtered+="$name"$'\t'"$model"$'\n'
+        done <<< "$pins"
+        pins="$filtered"
+    fi
+
+    names=$(printf '%s\n' "$pins" | cut -f1)
+
+    removes=""
+    while IFS= read -r name; do
+        [[ -n "$name" ]] || continue
+        if ! pi_list_contains "$names" "$name"; then
+            removes+="$name"$'\n'
+        fi
+    done <<< "$previous"
+
+    ops=""
+    while IFS= read -r name; do
+        [[ -n "$name" ]] || continue
+        ops+="remove"$'\t'"$name"$'\n'
+    done <<< "$removes"
+    while IFS=$'\t' read -r name model; do
+        [[ -n "$name" ]] || continue
+        ops+="set"$'\t'"$name"$'\t'"$model"$'\n'
+    done <<< "$pins"
+
+    if [[ -z "$ops" ]]; then
+        # Nothing pinned and nothing recorded: settings.json stays untouched.
+        pi_write_marker ""
+        return 0
+    fi
+
+    if [[ ! -f "$PI_SETTINGS_FILE" && -z "$pins" ]]; then
+        # Only stale names to remove and no file to remove them from: never
+        # create settings.json just to prune it.
+        pi_write_marker ""
+        return 0
+    fi
+
+    if [[ $writer_ok -eq 0 ]]; then
+        warn "perl with JSON::PP is unavailable; not updating $PI_SETTINGS_FILE"
+        if [[ -n "$pins" ]]; then
+            echo "Add these overrides to $PI_SETTINGS_FILE manually:"
+            pi_print_override_json "$pins"
+        fi
+        if [[ -n "$removes" ]]; then
+            echo "Remove these overrides from $PI_SETTINGS_FILE manually:"
+            while IFS= read -r name; do
+                [[ -n "$name" ]] || continue
+                echo "  subagents.agentOverrides.$name"
+            done <<< "$removes"
+        fi
+        return 0
+    fi
+
+    mkdir -p "$(dirname "$PI_SETTINGS_FILE")"
+
+    # Only a completed merge rewrites the marker. A degraded or failed update
+    # wrote nothing, so it records nothing and a later uninstall removes only
+    # what the installer actually owns.
+    status=0
+    printf '%s' "$ops" | pi_update_settings "$PI_SETTINGS_FILE" || status=$?
+    case "$status" in
+        0) pi_write_marker "$names" ;;
+        3) warn "$PI_SETTINGS_FILE is not valid JSON; leaving it untouched" ;;
+        *) warn "Failed to update $PI_SETTINGS_FILE; leaving it untouched" ;;
+    esac
+    return 0
+}
+
 # Pi discovers sub-agents under ~/.pi/agent/agents/. They live in their own
 # directory so one marker file covers the whole install and removal cannot
-# touch an agent the operator wrote.
+# touch an agent the operator wrote. The same directory carries the marker for
+# the model overrides the installer wrote, which is read before the directory
+# is replaced and rewritten after the reconcile.
 install_pi_agents() {
     local source_dir="$MARKETPLACE_DIR/pi/agents"
+    local previous=""
+    local pins=""
+    local artifact_ok=1
 
     if [[ ! -d "$source_dir" ]]; then
         warn "Pi agent payload missing; skipping Pi agent installation"
@@ -151,10 +528,22 @@ install_pi_agents() {
         return
     fi
 
+    if [[ -f "$PI_OVERRIDES_MARKER" ]]; then
+        previous=$(cat "$PI_OVERRIDES_MARKER")
+    fi
+    if ! pins=$(pi_artifact_pins "$PI_OVERRIDES_ARTIFACT"); then
+        warn "Unrecognized Pi model overrides artifact; skipping Pi model overrides: $PI_OVERRIDES_ARTIFACT"
+        artifact_ok=0
+    fi
+
     rm -rf "$PI_AGENTS_DIR"
     mkdir -p "$PI_AGENTS_DIR"
     cp "$source_dir"/*.md "$PI_AGENTS_DIR/"
     touch "$PI_AGENTS_DIR/.speq-skill-managed"
+
+    if [[ $artifact_ok -eq 1 ]]; then
+        pi_reconcile_overrides "$previous" "$pins"
+    fi
 
     info "Installed Pi sub-agents into $PI_AGENTS_DIR"
 }

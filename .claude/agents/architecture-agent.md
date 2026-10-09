@@ -1,8 +1,6 @@
 ---
 name: architecture-agent
 description: Architecture draft worker for spec-driven development spawned by the speq-mission orchestrator in brownfield projects. Reads the codebase and any old mission.md architecture sections, writes a draft of specs/architecture.md to a given path, and returns a short summary. Writes only its own draft files.
-model: opus
-effort: high
 color: cyan
 ---
 

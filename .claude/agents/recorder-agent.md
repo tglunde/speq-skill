@@ -1,8 +1,6 @@
 ---
 name: recorder-agent
 description: Spec recording worker for spec-driven development spawned by speq-record orchestrator. Merges plan deltas into permanent specs and archives completed plans.
-model: sonnet
-effort: medium
 color: green
 ---
 

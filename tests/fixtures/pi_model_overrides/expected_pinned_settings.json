@@ -1,0 +1,18 @@
+{
+  "mcpServers" : {
+    "serena" : {
+      "command" : "serena"
+    }
+  },
+  "subagents" : {
+    "agentOverrides" : {
+      "operator-agent" : {
+        "model" : "operator-model"
+      },
+      "speq-planner-agent" : {
+        "model" : "claude-opus-4-6"
+      }
+    }
+  },
+  "theme" : "dark"
+}

@@ -1,0 +1,15 @@
+{
+  "theme": "dark",
+  "mcpServers": {
+    "serena": {
+      "command": "serena"
+    }
+  },
+  "subagents": {
+    "agentOverrides": {
+      "operator-agent": {
+        "model": "operator-model"
+      }
+    }
+  }
+}

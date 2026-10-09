@@ -1,0 +1,8 @@
+agents:
+  planner-agent:
+    file: .claude/agents/planner-agent.md
+    note: Fixture row with a quoted flow-map value
+    claude: { model: "opus" }
+    codex: {}
+    pi: {}
+skills:

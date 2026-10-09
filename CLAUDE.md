@@ -6,6 +6,7 @@
 - **CLI**: use the local build only — `./target/debug/speq <cmd>` (`./target/release/speq <cmd>` after a release build). Do not use the global `speq` or `cargo run --`.
 - **Skill names**: use `/speq-*` in this repo. The installed plugin uses `/speq:*`. `build.sh` renames them. Do not rename by hand.
 - **Version**: `Cargo.toml` is the only source of the version number. Read it through `scripts/lib/version.sh` (`get_version`). Do not hardcode the version anywhere else.
+- **Model routing**: `model-routing.yml` at the repository root is the only place model, effort, and thinking values live. The repository-tree `.claude/` agent and skill copies carry no routing and inherit the session model. `build.sh`'s `guard_source_frontmatter` rejects a re-added `model:`, `effort:`, or `thinking:` line.
 - **Tests**: put integration test specs in files under `tests/fixtures/`. Do not write specs as inline strings.
 - **Commits**: use Conventional Commits — `<type>[scope]: <description>`. Types: `feat`, `fix`, `perf`, `refactor`, `test`, `docs`, `spec`, `chore`. Mark a breaking change with `!` after the type, or a `BREAKING CHANGE:` footer.
 - **Changelog**: `CHANGELOG.md` lists user-facing features and behavior changes only. Do not add `Fix:` entries, bug-fix notes, internal agent or skill names, tags, refactors, dependency bumps, or other technical detail. Describe what a user sees or does differently.

@@ -1,0 +1,13 @@
+{
+  "theme": "dark",
+  "subagents": {
+    "agentOverrides": {
+      "operator-agent": {
+        "model": "operator-model"
+      },
+      "speq-planner-agent": {
+        "model": "pinned-model"
+      }
+    }
+  }
+}

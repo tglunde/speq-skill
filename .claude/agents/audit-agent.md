@@ -1,8 +1,6 @@
 ---
 name: audit-agent
 description: Audit worker for spec-driven development spawned by the speq-audit orchestrator. Verifies specs/mission.md against the real spec library and returns the inconsistencies. Read-only — authors nothing.
-model: opus
-effort: high
 color: yellow
 ---
 

@@ -1,0 +1,10 @@
+{
+  "theme": "dark",
+  "subagents": {
+    "agentOverrides": {
+      "speq-planner-agent": {
+        "model": "old-model"
+      }
+    }
+  }
+}

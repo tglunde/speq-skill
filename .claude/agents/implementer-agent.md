@@ -1,8 +1,6 @@
 ---
 name: implementer-agent
 description: Standard implementation worker for spec-driven development spawned by the speq-implement orchestrator. Executes untagged tasks.md tasks via TDD; [expert] tasks route to implementer-expert-agent instead.
-model: sonnet
-effort: high
 color: red
 ---
 

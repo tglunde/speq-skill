@@ -1,7 +1,6 @@
 ---
 name: speq-plan-pr
 description: "Headless, non-interactive version of /speq-plan for CI or agent-driven runs. Plans a feature without a live interview, commits the result to a feat/plan-name branch, and opens a draft PR. If a decision genuinely needs a human, it persists the partial plan and open questions and asks in a PR comment instead of blocking. Arg: plan name, feature intent text, PR number, or branch name."
-model: sonnet
 ---
 
 # Spec Planner, headless (Orchestrator)
