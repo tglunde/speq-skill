@@ -1,0 +1,41 @@
+{
+  "nextId": 4,
+  "tasks": [
+    {
+      "id": "1",
+      "subject": "Inspect plan review and existing artifacts",
+      "description": "Read the round-1 review, planning hand-off note, plan, decision log, and relevant spec delta before applying only the requested revisions.",
+      "status": "completed",
+      "activeForm": "Inspecting plan artifacts",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1791713571309,
+      "updatedAt": 1791713614658
+    },
+    {
+      "id": "2",
+      "subject": "Apply requested plan revisions",
+      "description": "Add the uninstall guard requirements and scenario, revise decision-log entries, split task 1.4, and record each revision as a [plan-review] finding.",
+      "status": "completed",
+      "activeForm": "Applying plan revisions",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1791713571312,
+      "updatedAt": 1791713694679
+    },
+    {
+      "id": "3",
+      "subject": "Validate revised plan",
+      "description": "Run speq plan validate, inspect the diff and status, and report each requested revision as Resolved or Could not resolve.",
+      "status": "completed",
+      "activeForm": "Validating revised plan",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1791713571313,
+      "updatedAt": 1791713726563
+    }
+  ]
+}

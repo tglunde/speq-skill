@@ -1,0 +1,17 @@
+{
+  "nextId": 2,
+  "tasks": [
+    {
+      "id": "1",
+      "subject": "Revise absent marketplace target behavior",
+      "description": "Update the fix-installer-payload-root spec delta, plan requirements/scenario coverage/tasks, and decision log so an absent MARKETPLACE_DIR warns and skips only marketplace removal while an existing unmarked directory remains a hard failure.",
+      "status": "completed",
+      "activeForm": "Revising absent marketplace behavior",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1791715895156,
+      "updatedAt": 1791716010019
+    }
+  ]
+}

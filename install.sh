@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 # speq-skill installer
-# Usage: curl -fsSL https://raw.githubusercontent.com/marconae/speq-skill/main/install.sh | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/tglunde/speq-skill/main/install.sh | bash
 
 set -e
 
-REPO="marconae/speq-skill"
+REPO="tglunde/speq-skill"
 INSTALL_DIR="$HOME/.local/bin"
-MARKETPLACE_DIR="$HOME/.speq-skill"
+# Resolve the payload root first: every path derived below (Codex marketplace
+# root, Pi agent and override reads) comes from MARKETPLACE_DIR, and a
+# caller-provided root must govern all of them. The default applies only when
+# the caller did not provide one.
+MARKETPLACE_DIR="${MARKETPLACE_DIR:-$HOME/.speq-skill}"
 CODEX_MARKETPLACE_NAME="speq-skill-local"
 CODEX_MARKETPLACE_ROOT="$MARKETPLACE_DIR/codex"
 CODEX_SKILLS_DIR="${CODEX_HOME:-$HOME/.codex}/skills"
@@ -28,7 +32,6 @@ PI_SETTINGS_FILE="$HOME/.pi/agent/settings.json"
 PI_AUTH_FILE="$HOME/.pi/agent/auth.json"
 PI_MODELS_FILE="$HOME/.pi/agent/models.json"
 PI_MODELS_STORE_FILE="$HOME/.pi/agent/models-store.json"
-PI_OVERRIDES_ARTIFACT="$MARKETPLACE_DIR/pi/model-overrides.json"
 PI_OVERRIDES_MARKER="$PI_AGENTS_DIR/.speq-model-overrides"
 SERENA_CLI_INSTALL="uv tool install -p 3.13 serena-agent"
 
@@ -522,7 +525,13 @@ pi_reconcile_overrides() {
 # the model overrides the installer wrote, which is read before the payload is
 # merged in and rewritten after the reconcile.
 install_pi_agents() {
+    # Both payload reads share the one current MARKETPLACE_DIR, resolved at
+    # function-execution time so whichever root is active when this function
+    # runs governs the agent files and their pins alike: a root exported
+    # before install.sh was sourced, one assigned after sourcing, or the
+    # $HOME/.speq-skill default.
     local source_dir="$MARKETPLACE_DIR/pi/agents"
+    local artifact="$MARKETPLACE_DIR/pi/model-overrides.json"
     local previous=""
     local pins=""
     local artifact_ok=1
@@ -540,8 +549,8 @@ install_pi_agents() {
     if [[ -f "$PI_OVERRIDES_MARKER" ]]; then
         previous=$(cat "$PI_OVERRIDES_MARKER")
     fi
-    if ! pins=$(pi_artifact_pins "$PI_OVERRIDES_ARTIFACT"); then
-        warn "Unrecognized Pi model overrides artifact; skipping Pi model overrides: $PI_OVERRIDES_ARTIFACT"
+    if ! pins=$(pi_artifact_pins "$artifact"); then
+        warn "Unrecognized Pi model overrides artifact; skipping Pi model overrides: $artifact"
         artifact_ok=0
     fi
 

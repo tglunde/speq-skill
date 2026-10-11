@@ -133,15 +133,15 @@ The build emits `pi/model-overrides.json` from the non-null `pi.model` values in
 | `/skill:speq-planning` | inherited | inherited | Reference material for the caller |
 | `/skill:speq-spec-merge` | inherited | inherited | Reference material for the caller |
 | `/skill:speq-writing-guardrails` | inherited | inherited | Reference material for the caller |
-| `speq-planner-agent` | `opencode/qwen3.8-max` | `xhigh` | Spec deltas, context, task decomposition |
-| `speq-plan-reviewer` | `openrouter/meta/muse-spark-1.3` | `xhigh` | Adversarial plan review |
-| `speq-implementer-agent` | `opencode/gpt-5.6-luna` | `high` | Standard implementation tasks |
-| `speq-implementer-expert-agent` | `opencode/qwen3.8-max` | `xhigh` | Tasks tagged `[expert]` |
-| `speq-code-reviewer` | `openrouter/meta/muse-spark-1.3` | `xhigh` | Adversarial implementation review |
-| `speq-audit-agent` | `opencode/glm-5.3-flash` | `high` | Mission ↔ spec-library sync |
-| `speq-architecture-agent` | `opencode/gemini-3.1-pro` | `high` | Brownfield draft of `specs/architecture.md` for `/speq:mission` |
-| `speq-adr-audit-agent` | `opencode/glm-5.3-flash` | `high` | ADR noise and accuracy review |
-| `speq-recorder-agent` | `opencode/gpt-5.6-luna` | `medium` | Deterministic spec merge and archive |
+| `speq-planner-agent` | `opencode-go/gpt-5.6-luna` | `xhigh` | Spec deltas, context, task decomposition |
+| `speq-plan-reviewer` | `opencode-go/kimi-k3` | `max` | Adversarial plan review |
+| `speq-implementer-agent` | `opencode-go/gpt-6-luna` | `high` | Standard implementation tasks |
+| `speq-implementer-expert-agent` | `opencode-go/deepseek-v4-pro` | `max` | Tasks tagged `[expert]` |
+| `speq-code-reviewer` | `opencode-go/glm-5.3` | `max` | Adversarial implementation review |
+| `speq-audit-agent` | `opencode-go/glm-5.3-flash` | `high` | Mission ↔ spec-library sync |
+| `speq-architecture-agent` | `opencode-go/gpt-5.6-luna` | `high` | Brownfield draft of `specs/architecture.md` for `/speq:mission` |
+| `speq-adr-audit-agent` | `opencode-go/glm-5.3-flash` | `high` | ADR noise and accuracy review |
+| `speq-recorder-agent` | `opencode-go/deepseek-v4.1-flash` | `high` | Deterministic spec merge and archive |
 <!-- END GENERATED pi routing table -->
 
 ### Pin the Pi models

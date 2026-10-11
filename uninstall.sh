@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 # speq-skill uninstaller
-# Usage: curl -fsSL https://raw.githubusercontent.com/marconae/speq-skill/main/uninstall.sh | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/tglunde/speq-skill/main/uninstall.sh | bash
 
 set -e
 
 INSTALL_DIR="$HOME/.local/bin"
-MARKETPLACE_DIR="$HOME/.speq-skill"
+# Resolve the marketplace root first and never overwrite a caller-provided
+# value: the marketplace removal step and the Codex symlink ownership checks
+# below must target the root the caller named.
+MARKETPLACE_DIR="${MARKETPLACE_DIR:-$HOME/.speq-skill}"
 CODEX_MARKETPLACE_NAME="speq-skill-local"
 CODEX_LEGACY_MARKETPLACE_FILE="$HOME/.agents/plugins/marketplace.json"
 CODEX_SKILLS_DIR="${CODEX_HOME:-$HOME/.codex}/skills"
@@ -335,12 +338,34 @@ remove_pi_agents() {
     pi_remove_overrides "$previous"
 }
 
+# A destructive marketplace removal must only ever target an installed
+# marketplace root. Reject the two broad roots outright, and require the
+# `.claude-plugin/marketplace.json` marker every installed marketplace
+# carries on any path that exists. A MARKETPLACE_DIR that does not exist is
+# not unsafe: the guard lets it through so step 8 warns, names it, and skips
+# only the marketplace removal. Runs before anything else is removed and
+# names the rejected directory in its message.
+guard_marketplace_removal_target() {
+    if [[ "$MARKETPLACE_DIR" == "/" ]]; then
+        error "Refusing to uninstall: marketplace directory '$MARKETPLACE_DIR' is the filesystem root"
+    fi
+    if [[ "$MARKETPLACE_DIR" == "$HOME" ]]; then
+        error "Refusing to uninstall: marketplace directory '$MARKETPLACE_DIR' is the home directory"
+    fi
+    if [[ -e "$MARKETPLACE_DIR" && ! -f "$MARKETPLACE_DIR/.claude-plugin/marketplace.json" ]]; then
+        error "Refusing to uninstall: marketplace directory '$MARKETPLACE_DIR' has no .claude-plugin/marketplace.json install marker"
+    fi
+}
+
 main() {
     echo ""
     echo "============================"
     echo "   speq-skill uninstaller"
     echo "============================"
     echo ""
+
+    # Reject an unsafe marketplace target before any removal step runs.
+    guard_marketplace_removal_target
 
     local total=8
 

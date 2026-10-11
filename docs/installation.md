@@ -7,7 +7,7 @@
 ## Quick install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/marconae/speq-skill/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/tglunde/speq-skill/main/install.sh | bash
 ```
 
 Open Claude Code, Codex, or Pi. Start with `/speq:mission` in Claude Code, type `$` in Codex, or run `/skill:speq-mission` in Pi.
@@ -39,7 +39,7 @@ Open Claude Code, Codex, or Pi. Start with `/speq:mission` in Claude Code, type 
 ## Install from source
 
 ```bash
-git clone https://github.com/marconae/speq-skill && cd speq-skill
+git clone https://github.com/tglunde/speq-skill && cd speq-skill
 ./scripts/local-install.sh
 ```
 
@@ -66,7 +66,7 @@ Re-run the install script and run `/speq:audit` to update the spec library.
 ## Uninstall
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/marconae/speq-skill/main/uninstall.sh | bash
+curl -fsSL https://raw.githubusercontent.com/tglunde/speq-skill/main/uninstall.sh | bash
 ```
 
 If you installed from source, run `./uninstall.sh` instead.

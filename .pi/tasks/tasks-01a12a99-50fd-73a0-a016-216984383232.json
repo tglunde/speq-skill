@@ -1,0 +1,89 @@
+{
+  "nextId": 8,
+  "tasks": [
+    {
+      "id": "1",
+      "subject": "Append Phase 4 fix tasks to tasks.md",
+      "description": "Derive one task per finding from review-findings.md (Expert + Standard sections), append under ## Phase 4: Review Fixes, tag expert-derived with [expert].",
+      "status": "completed",
+      "activeForm": "Appending Phase 4 fix tasks",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1791716236382,
+      "updatedAt": 1791716248440
+    },
+    {
+      "id": "2",
+      "subject": "4.1 [expert] Sandbox rm wrapper in guard/override tests",
+      "description": "Add install_sandbox_rm helper writing an rm wrapper that only allows non-flag args matching \"$HOME\"/* and refuses (path-free) otherwise; call it in uninstaller_guards_marketplace_removal_targets and uninstaller_honors_marketplace_dir_override.",
+      "status": "completed",
+      "activeForm": "Adding sandbox rm wrapper",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1791716236382,
+      "updatedAt": 1791716287900
+    },
+    {
+      "id": "3",
+      "subject": "4.2 env_remove MARKETPLACE_DIR in with_isolated_env",
+      "description": "Add .env_remove(\"MARKETPLACE_DIR\") to with_isolated_env so tests never read an ambient MARKETPLACE_DIR.",
+      "status": "completed",
+      "activeForm": "Removing ambient MARKETPLACE_DIR",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1791716236382,
+      "updatedAt": 1791716301890
+    },
+    {
+      "id": "4",
+      "subject": "4.3 Unset/empty MARKETPLACE_DIR boundary tests",
+      "description": "Add uninstaller_removes_default_root_when_marketplace_dir_is_unset_or_empty and a third block in installer_uses_one_payload_root_for_agents_and_overrides exporting MARKETPLACE_DIR=''.",
+      "status": "completed",
+      "activeForm": "Adding default-root boundary tests",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1791716236383,
+      "updatedAt": 1791716350468
+    },
+    {
+      "id": "5",
+      "subject": "4.4 mark_marketplace_installed_at helper",
+      "description": "Add mark_marketplace_installed_at(root), delegate mark_marketplace_installed to it, replace three inline marker creations.",
+      "status": "completed",
+      "activeForm": "Deduplicating marker seeding",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1791716236383,
+      "updatedAt": 1791716376126
+    },
+    {
+      "id": "6",
+      "subject": "4.5 Reword local-install.sh comment",
+      "description": "Reword line-34 comment in scripts/local-install.sh: MARKETPLACE_DIR defaults to the local build root and may carry a caller-provided value.",
+      "status": "completed",
+      "activeForm": "Rewording local-install comment",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1791716236383,
+      "updatedAt": 1791716390541
+    },
+    {
+      "id": "7",
+      "subject": "1.6 Absent marketplace dir: warn, skip step 8, exit 0",
+      "description": "TDD: add uninstaller_skips_absent_marketplace_dir test, observe failure against current guard, then refine guard_marketplace_removal_target in uninstall.sh so a non-existent MARKETPLACE_DIR warns and skips only marketplace removal while /, $HOME, and existing-unmarked stay hard failures. Update tasks.md 1.6.",
+      "status": "completed",
+      "activeForm": "Refining absent-marketplace guard",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1791716236384,
+      "updatedAt": 1791716642899
+    }
+  ]
+}

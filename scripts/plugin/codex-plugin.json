@@ -5,8 +5,8 @@
   "author": {
     "name": "AUTHOR_PLACEHOLDER"
   },
-  "homepage": "https://github.com/marconae/speq-skill",
-  "repository": "https://github.com/marconae/speq-skill",
+  "homepage": "https://github.com/tglunde/speq-skill",
+  "repository": "https://github.com/tglunde/speq-skill",
   "license": "MIT",
   "keywords": ["spec-driven", "tdd", "specifications", "planning", "workflow"],
   "skills": "./skills/",
@@ -17,7 +17,7 @@
     "developerName": "AUTHOR_PLACEHOLDER",
     "category": "Development",
     "capabilities": ["Interactive", "Write"],
-    "websiteURL": "https://github.com/marconae/speq-skill",
+    "websiteURL": "https://github.com/tglunde/speq-skill",
     "defaultPrompt": [
       "In Codex, type $ and choose speq:mission to bootstrap specs.",
       "Plan a change with $ and speq:plan.",

@@ -8,7 +8,7 @@
 
 [![spec|driven](https://img.shields.io/badge/spec-driven-blue)](specs/)
 [![Rust](https://img.shields.io/badge/rust-stable-brightgreen.svg)](https://www.rust-lang.org/)
-[![CI](https://github.com/marconae/speq-skill/actions/workflows/ci.yml/badge.svg)](https://github.com/marconae/speq-skill/actions/workflows/ci.yml)
+[![CI](https://github.com/tglunde/speq-skill/actions/workflows/ci.yml/badge.svg)](https://github.com/tglunde/speq-skill/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 [Getting Started](#getting-started) • [Why](#why-i-built-it) • [How It Works](#how-does-it-work) • [Documentation](./docs/) • [Installation](./docs/installation.md)
@@ -19,7 +19,7 @@
 ## Getting Started
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/marconae/speq-skill/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/tglunde/speq-skill/main/install.sh | bash
 ```
 
 Then open Claude Code, Codex, or Pi and start with the matching trigger: `/speq:mission` in Claude Code, `$speq:mission` in Codex, or `/skill:speq-mission` in Pi.

@@ -7,13 +7,19 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
+# Resolve the marketplace root before install.sh is sourced: install.sh keeps
+# an existing MARKETPLACE_DIR and derives its dependent paths (Codex
+# marketplace root, Pi agent and override reads) from it, so the caller's
+# value must be in place first. The local build's dist/marketplace is the
+# default; a caller-provided value wins.
+MARKETPLACE_DIR="${MARKETPLACE_DIR:-${PROJECT_ROOT}/dist/marketplace}"
+
 # Shared helpers (info, warn, offer_mcp_servers, ...). install.sh only runs
 # main when executed, so sourcing it defines functions and defaults only.
-# The variables below override its defaults.
+# MARKETPLACE_DIR is resolved above, so install.sh keeps this value.
 source "$PROJECT_ROOT/install.sh"
 
 BIN_DIR="${HOME}/.local/bin"
-MARKETPLACE_DIR="${PROJECT_ROOT}/dist/marketplace"
 INSTALL_DIR="${HOME}/.speq-skill"
 CODEX_MARKETPLACE_NAME="speq-skill-local"
 CODEX_MARKETPLACE_ROOT="${INSTALL_DIR}/codex"
@@ -25,8 +31,8 @@ echo "=== Installing speq-skill ==="
 
 # register_codex_plugin, install_codex_skills, install_agents_skills, and
 # install_pi_agents all come from install.sh. They read MARKETPLACE_DIR, which
-# points at the local build, and they only write: no override here may delete
-# from the operator's tree.
+# defaults to the local build root and may carry a caller-provided value, and
+# they only write: no override here may delete from the operator's tree.
 
 # 1. Build release binary if not present
 if [ ! -f "target/release/speq" ]; then

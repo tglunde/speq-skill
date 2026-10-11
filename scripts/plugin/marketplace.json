@@ -19,8 +19,8 @@
       "author": {
         "name": "AUTHOR_PLACEHOLDER"
       },
-      "homepage": "https://github.com/marconae/speq-skill",
-      "repository": "https://github.com/marconae/speq-skill",
+      "homepage": "https://github.com/tglunde/speq-skill",
+      "repository": "https://github.com/tglunde/speq-skill",
       "license": "MIT",
       "keywords": ["spec-driven development", "tdd", "specs", "workflow"],
       "category": "development"

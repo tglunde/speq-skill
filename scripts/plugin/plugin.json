@@ -5,7 +5,7 @@
   "author": {
     "name": "AUTHOR_PLACEHOLDER"
   },
-  "repository": "https://github.com/marconae/speq-skill",
+  "repository": "https://github.com/tglunde/speq-skill",
   "license": "MIT",
   "keywords": ["spec-driven", "tdd", "specifications", "planning", "workflow"],
   "skills": "./skills/",

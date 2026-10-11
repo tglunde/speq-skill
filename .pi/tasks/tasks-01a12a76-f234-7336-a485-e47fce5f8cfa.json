@@ -1,0 +1,77 @@
+{
+  "nextId": 7,
+  "tasks": [
+    {
+      "id": "1",
+      "subject": "Write split-root regression test (TDD red for 1.4)",
+      "description": "Extend tests/pi_model_overrides.rs payload helpers to create arbitrary roots with distinguishable agent content and bare model-id artifacts; add installer_uses_one_payload_root_for_agents_and_overrides with cases (a) and (b). Run and confirm failure against old source-time wiring.",
+      "status": "completed",
+      "activeForm": "Writing split-root regression test",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1791713992241,
+      "updatedAt": 1791714068169
+    },
+    {
+      "id": "2",
+      "subject": "Write uninstaller guard/override tests (TDD red for 1.5)",
+      "description": "Add uninstaller_guards_marketplace_removal_targets and uninstaller_honors_marketplace_dir_override; seed existing valid uninstaller cases with the marker fixture. Confirm failures against current uninstall.sh.",
+      "status": "completed",
+      "activeForm": "Writing uninstaller guard tests",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1791713992241,
+      "updatedAt": 1791714068170
+    },
+    {
+      "id": "3",
+      "subject": "Implement 1.1 install.sh payload-root wiring",
+      "description": "Resolve ${MARKETPLACE_DIR:-$HOME/.speq-skill} before dependent paths, remove source-time PI_OVERRIDES_ARTIFACT, bind MARKETPLACE_DIR/pi/model-overrides.json inside install_pi_agents.",
+      "status": "completed",
+      "activeForm": "Implementing install.sh payload-root wiring",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1791713992242,
+      "updatedAt": 1791714089219
+    },
+    {
+      "id": "4",
+      "subject": "Implement 1.2 uninstall.sh caller root + removal guard",
+      "description": "Resolve ${MARKETPLACE_DIR:-$HOME/.speq-skill}; before any removal reject /, exactly $HOME, and roots lacking .claude-plugin/marketplace.json, exit non-zero, name the directory.",
+      "status": "completed",
+      "activeForm": "Implementing uninstall.sh guard",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1791713992242,
+      "updatedAt": 1791714101012
+    },
+    {
+      "id": "5",
+      "subject": "Implement 1.3 local-install.sh ordering",
+      "description": "Assign MARKETPLACE_DIR=\"${MARKETPLACE_DIR:-${PROJECT_ROOT}/dist/marketplace}\" before sourcing install.sh; remove later unconditional assignment.",
+      "status": "completed",
+      "activeForm": "Implementing local-install.sh ordering",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1791713992242,
+      "updatedAt": 1791714123259
+    },
+    {
+      "id": "6",
+      "subject": "Verification pass and tasks.md updates",
+      "description": "bash -n on all three scripts, cargo test --test pi_model_overrides, cargo build, full cargo test, fmt, clippy, plugin build, plan validate. Update tasks.md statuses for 1.1-1.5.",
+      "status": "completed",
+      "activeForm": "Running verification pass",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1791713992243,
+      "updatedAt": 1791714377719
+    }
+  ]
+}
