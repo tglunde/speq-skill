@@ -1,6 +1,6 @@
 ---
 name: speq-git-operations
-description: The git/gh operation-to-command mapping, safety rules, and return formats — invoked directly by the headless orchestrators speq-plan-pr and speq-implement-pr, the only components permitted to write git history or touch a remote.
+description: "The git and gh operation-to-command mapping, safety rules, and return formats. Invoked directly by the headless orchestrators speq-plan-pr and speq-implement-pr, the only components permitted to write git history or touch a remote."
 ---
 
 # Git Operations

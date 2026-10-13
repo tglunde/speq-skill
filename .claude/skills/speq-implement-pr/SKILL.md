@@ -38,9 +38,7 @@ Invoke before starting:
 
 ### 0. Load Project Hook (orchestrator)
 
-Check for `.speq/implement-pr-hook.md` in the repo root.
-- **Present:** read it. Announce "Loaded project hook: .speq/implement-pr-hook.md". Its content is authoritative: it can add to, change, or override any part of this workflow. If the hook conflicts with this workflow, the hook wins.
-- **Absent:** continue, no mention.
+Load `.speq/implement-pr-hook.md` per `/speq-plan`'s `references/hook-loading.md`.
 
 ### 1. Resolve Target + Branch
 
@@ -138,19 +136,7 @@ Run — operation: comment-pr (per /speq-git-operations)
 
 ## Spec Hierarchy (reference)
 
-```
-specs/
-├── <domain>/<feature>/spec.md            # Permanent (after record)
-├── architecture.md                       # Permanent, changed by the recorder applying the plan's architecture delta
-├── _plans/<plan-name>/                   # Active until recorded: committed whole at Phase A except notes/, not as an itemized subset
-│   ├── architecture.md                   # Architecture delta, present only when the plan changes the architecture
-│   ├── tasks.md                          # Pre-created here (§ PR Lifecycle checkpoint); WBS filled by speq-implement
-│   ├── review-findings.md                # Created by code-reviewer
-│   ├── review/round-N.md                 # Created by plan-reviewer
-│   ├── notes/<group-letter>.md           # Rotation hand-off notes, created by implementer agents; local, never committed
-│   └── verification-report.md            # Created by speq-implement
-└── _recorded/NNN-<plan-name>/            # Archived by speq-record (gitignored by default)
-```
+Canonical layout: `/speq-plan`'s `references/spec-hierarchy.md`.
 
 ## Work Split (reference)
 

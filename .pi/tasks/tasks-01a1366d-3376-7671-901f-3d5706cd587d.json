@@ -1,0 +1,101 @@
+{
+  "nextId": 9,
+  "tasks": [
+    {
+      "id": "1",
+      "subject": "Extract shared project-hook loading block (H1)",
+      "description": "H1: The 7 orchestrators duplicate the hook-loading block and cache docs/hooks.md. Create one shared reference and replace the 7 blocks with a short pointer.",
+      "status": "completed",
+      "activeForm": "Extracting shared project-hook block",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1791914856897,
+      "updatedAt": 1791915055086
+    },
+    {
+      "id": "2",
+      "subject": "Deduplicate the two implementer agents (H2)",
+      "description": "H2: implementer-agent.md and implementer-expert-agent.md share 35 non-trivial lines. Extract shared process to a reference cited by both; keep only expert deltas.",
+      "status": "completed",
+      "activeForm": "Deduplicating implementer agents",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1791914856898,
+      "updatedAt": 1791915055087
+    },
+    {
+      "id": "3",
+      "subject": "Single-owner the Plan Size rule (H3)",
+      "description": "H3: Plan Size classification is duplicated in speq-plan and speq-plan-pr. Move to one owner and cite it.",
+      "status": "completed",
+      "activeForm": "Single-owning the Plan Size rule",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1791914856898,
+      "updatedAt": 1791915055087
+    },
+    {
+      "id": "4",
+      "subject": "Extract shared adversarial review loop (H4)",
+      "description": "H4: speq-plan section 6 and speq-plan-pr section 5 duplicate the review loop. Extract to a shared reference parameterized by interactive/headless.",
+      "status": "completed",
+      "activeForm": "Extracting shared review loop",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1791914856898,
+      "updatedAt": 1791915055088
+    },
+    {
+      "id": "5",
+      "subject": "Rewrite context-pointer descriptions (H5)",
+      "description": "H5: Rewrite the 5 always-loaded descriptions that cache body identity (writing-guardrails, code-review, planning, audit, adr-rules). Keep what + trigger, drop the enumeration.",
+      "status": "completed",
+      "activeForm": "Rewriting context-pointer descriptions",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1791914856899,
+      "updatedAt": 1791915074918
+    },
+    {
+      "id": "6",
+      "subject": "Collapse remaining duplicated reference (step 3)",
+      "description": "M1 spec hierarchy tree, M2 verb table, M3 Conventional Commits, M5 delta marker semantics, M8 adr-rules numbering (7a). Collapse each to a single owner.",
+      "status": "completed",
+      "activeForm": "Collapsing remaining duplicated reference",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1791914856899,
+      "updatedAt": 1791915085786
+    },
+    {
+      "id": "7",
+      "subject": "Shared references, CLI table, positives, lows (step 4)",
+      "description": "M4 trim speq-cli table, M6 shared reference location + build change, M7 pair prohibitions with positives, plus Low items L1-L5.",
+      "status": "completed",
+      "activeForm": "Applying shared refs and low-priority fixes",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1791914856900,
+      "updatedAt": 1791915233198
+    },
+    {
+      "id": "8",
+      "subject": "Build and verify all three platforms",
+      "description": "Run scripts/plugin/build.sh and confirm the plugin builds, frontmatter guard passes, and shared references land in each platform's plugin output.",
+      "status": "completed",
+      "activeForm": "Building and verifying plugins",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1791914856900,
+      "updatedAt": 1791915233198
+    }
+  ]
+}

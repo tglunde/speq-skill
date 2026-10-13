@@ -1,6 +1,6 @@
 ---
 name: speq-plan
-description: Plan a feature or change through a clarifying interview, producing spec deltas, plan.md, and decision-log.md via planner-agent with adversarial review. Use when the user asks to plan, spec, design, or scope a new feature, a change or removal of existing behavior, a refactor, or a fix — before any implementation.
+description: "Plan a feature or change through a clarifying interview, producing spec deltas, plan.md, and decision-log.md via planner-agent with adversarial review. Use when the user asks to plan, spec, design, or scope a new feature, a change or removal of existing behavior, a refactor, or a fix, before any implementation."
 ---
 
 # Spec Planner (Orchestrator)
@@ -18,9 +18,7 @@ Invoke before starting:
 
 ### 0. Load Project Hook (orchestrator)
 
-Check for `.speq/plan-hook.md` in the repo root.
-- **Present:** read it. Announce "Loaded project hook: .speq/plan-hook.md". Its content is authoritative: it can add to, change, or override any part of this workflow. If the hook conflicts with this workflow, the hook wins.
-- **Absent:** continue without mention.
+Load `.speq/plan-hook.md` per this skill's `references/hook-loading.md`.
 
 ### 1. Discovery (orchestrator)
 
@@ -36,7 +34,7 @@ speq decision-log show
 
 Read `specs/architecture.md` if it exists.
 
-Collect only enough context for good interview questions, not a full exploration.
+Collect the context the interview needs: the domain and feature inventory, the search results for each exact term in the request, and the accepted ADRs. Stop there; deeper exploration belongs to `planner-agent`.
 
 ### 2. Clarifying Interview (orchestrator)
 
@@ -50,7 +48,7 @@ Record the answers in a concise summary for the sub-agent.
 
 ### 3. Plan Name (orchestrator)
 
-Pattern: `<verb>-<feature-scope>[-<qualifier>]`
+Pattern: `<verb>-<feature-scope>[-<qualifier>]`. This table is the single owner of the verb vocabulary; `/speq-plan-pr` cites it.
 
 | Verb | When |
 |------|------|
@@ -101,45 +99,13 @@ When the sub-agent returns:
 
 ### 6. Adversarial Plan Review (orchestrator)
 
-Spawn `plan-reviewer`, a diabolus advocatus, to challenge the plan before handoff. Maximum 2 rounds total.
+Run the review loop in this skill's `references/review-loop.md`, in interactive mode. Maximum 2 rounds total. `plan-reviewer` is the diabolus advocatus; `/speq-plan-review` owns its method and taxonomy.
 
-**Round 1:**
+The loop has two interactive exits:
+- **Intent gate (`INTENT > 0`):** present the Intent Fidelity findings via `AskUserQuestion` before any revision. The user accepts the plan as-is, or gives guidance and you respawn `planner-agent` manually.
+- **`HUMAN` remainder:** present the findings via `AskUserQuestion`, one line of context each plus a pointer to the round file for detail. The user accepts the risk and proceeds, or gives guidance and you respawn `planner-agent` manually.
 
-```
-Delegate to plan-reviewer — Review <plan-name> (round 1)
-
-## Plan Name
-<plan-name>
-
-## User Intent
-<verbatim original request>
-
-## Clarifying Interview Results
-<verbatim Q&A>
-
-## Plan Artifacts
-plan.md, decision-log.md, every specs/_plans/<plan-name>/**/spec.md delta, and specs/_plans/<plan-name>/architecture.md when present
-
-## Project Hook
-<if active: note ".speq/plan-hook.md — read it and apply it" — otherwise omit this section>
-```
-
-It writes its findings to `specs/_plans/<plan-name>/review/round-1.md` and returns only `PLAN REVIEW round 1: BLOCKERS: <n>, ADVISORY: <n>, INTENT: <n>, HUMAN: <n> — <path>`. `INTENT` counts the BLOCKERs on the Intent Fidelity axis alone; `HUMAN` counts every BLOCKER tagged `Escalation: HUMAN` per `/speq-plan-review`'s Escalation Class section — the rest are `MECHANICAL`.
-
-**If `INTENT > 0`:** the reviewer holds that the plan solves a different problem than the one asked. Read the Intent-Fidelity findings from the round file. Present them via `AskUserQuestion` before any revision. The user accepts the plan as-is, or gives guidance and you respawn `planner-agent` manually.
-
-**If `INTENT == 0` and BLOCKER findings exist:**
-
-1. Respawn `planner-agent` with the path to `review/round-1.md`. Instruct it to read the BLOCKER findings from that file, execute each `Fix:` line, log each resolved blocker as a `[plan-review]`-prefixed `## Review Findings` entry in `decision-log.md`, re-run `speq plan validate`, and return its per-finding `Resolved:`/`Could not resolve:` report per `/speq-planning`'s Revision Mode.
-2. **Round 2 runs only if round 1's `HUMAN` count was greater than 0.** A `HUMAN: 0` round 1 means every BLOCKER was `MECHANICAL` — the reviewer already judged none needed adversarial re-checking, only a fix. Skip to the ship decision below without respawning `plan-reviewer`.
-3. **`HUMAN > 0`:** compute Plan Size (the plan is `small` when all three hold: the plan-name's verb, per the verb table, is `fix`; `decision-log.md`'s `## Design Decisions` section is empty; the plan directory has no `architecture.md`; otherwise `full`), then respawn `plan-reviewer` for round 2 with the path to `review/round-1.md` plus `Plan Size: small | full`, so it confirms each round-1 BLOCKER is resolved before checking for new ones (or, on `small`, confirms and stops there). Do not run a third adversarial round, even if round 2 raises new BLOCKERs.
-
-**BLOCKERs remaining after round 2, split by `Escalation`:**
-
-- **`MECHANICAL` remainder:** respawn `planner-agent` once more with the still-open `MECHANICAL` findings from `review/round-2.md`; same Revision Mode format. Don't interrupt the user for these unless one comes back `Could not resolve:` or `speq plan validate` fails — then it joins the `HUMAN` remainder below, with the `Could not resolve:` reason as the question.
-- **`HUMAN` remainder** (plus any `MECHANICAL` finding a fix pass could not close): read those findings and use `AskUserQuestion`, one line of context each plus a pointer to the round file for detail. The user accepts the risk and proceeds, or gives guidance and you respawn `planner-agent` manually.
-
-**ADVISORY findings** never loop and are never persisted. Read them from the last round file that actually ran and carry them into step 7's report — round 1's, if round 2 was skipped entirely (`HUMAN: 0`) or ran confirm-only (`Plan Size: small`); round 2's otherwise.
+Read ADVISORY findings from the last round file that actually ran and carry them into step 7's report.
 
 ### 7. Explain next steps (orchestrator)
 
@@ -155,12 +121,7 @@ Then:
 
 ## Spec Hierarchy (reference)
 
-```
-specs/
-├── <domain>/<feature>/spec.md     # Permanent
-├── _plans/<plan-name>/            # Active
-└── _recorded/<plan-name>/         # Archived
-```
+Canonical layout: `/speq-plan`'s `references/spec-hierarchy.md`.
 
 ## Work Split (reference)
 

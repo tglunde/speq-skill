@@ -2,7 +2,7 @@
 
 <!-- One fragment per plan. Add one ## ADR block per promoted decision below. Rules: /speq-adr-rules. -->
 <!-- ID is a kebab-case slug, unique across every file in specs/_decision. -->
-<!-- Minimum text, no history, per /speq-adr-rules rule 7a. -->
+<!-- Minimum text, no history, per /speq-adr-rules rule 8. -->
 <!-- Supersedes is optional — set it only when this ADR replaces an earlier one. -->
 
 <!-- Optional sections follow /speq-spec-merge's ADR mapping. Omit a section the entry does not carry. -->

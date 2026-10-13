@@ -1,13 +1,13 @@
 ---
 name: speq-code-review
-description: Code review tag taxonomy and findings output format — guardrail violations, dead code, test quality, bad comments, optimizations, YAGNI/over-engineering, error handling, and design depth. Triggered by code-reviewer.
+description: "Code review tag taxonomy and findings output format. Triggered by code-reviewer."
 ---
 
 # Code Review Taxonomy
 
 Analyze each changed file for the categories below.
 
-**Non-goal:** a deviation the brief notes as authorized by an active project hook (a skipped guardrail, a relaxed convention) is a settled, intentional choice. Do not raise it as a finding under any category.
+**Settled choices:** treat a deviation the brief notes as authorized by an active project hook (a skipped guardrail, a relaxed convention) as a settled, intentional choice. Review the rest of the file normally and leave that deviation unraised in every category.
 
 ## 1. Guardrail Violations
 

@@ -1,6 +1,6 @@
 ---
 name: speq-record
-description: "Merge implemented spec deltas into the permanent specs library and archive the plan. Use when implementation is verified — after /speq-implement produces verification-report.md — or when the user asks to record, merge, or archive a finished plan. Arg: <plan-name>."
+description: "Merge implemented spec deltas into the permanent specs library and archive the plan. Use when implementation is verified, after /speq-implement produces verification-report.md, or when the user asks to record, merge, or archive a finished plan. Arg: <plan-name>."
 ---
 
 # Spec Recorder (Orchestrator)
@@ -18,11 +18,7 @@ The `recorder-agent` sub-agent invokes its own required skills.
 
 ### Phase 0: Load Project Hook (orchestrator)
 
-Check for `.speq/record-hook.md` in the repo root.
-- **Present:** read it. Announce "Loaded project hook: .speq/record-hook.md". Its content is authoritative: it can add to, change, or override any part of this workflow. If the hook conflicts with this workflow, the hook wins.
-- **Absent:** continue normally, no mention.
-
-Note it (not its full content) as a `Project Hook:` line in the `recorder-agent` brief below.
+Load `.speq/record-hook.md` per `/speq-plan`'s `references/hook-loading.md`. Pass its path (not its content) as a `Project Hook:` line in the `recorder-agent` brief below.
 
 ### Phase 1: Resolve Plan Name (orchestrator)
 

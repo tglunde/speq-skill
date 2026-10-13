@@ -1,6 +1,6 @@
 ---
 name: speq-implement
-description: "Orchestrate implementation of a reviewed plan: task breakdown, TDD sub-agents, code review, and verification report. Use when the user asks to implement, build, or execute a plan under specs/_plans/ — after /speq-plan, before /speq-record. Arg: <plan-name>."
+description: "Orchestrate implementation of a reviewed plan: task breakdown, TDD sub-agents, code review, and verification report. Use when the user asks to implement, build, or execute a plan under specs/_plans/, after /speq-plan and before /speq-record. Arg: <plan-name>."
 ---
 
 # Spec Implementer (Orchestrator)
@@ -35,17 +35,13 @@ Do not invoke coding skills (`/speq-code-tools`, `/speq-ext-research`, `/speq-co
 
 **Rotation rule:** when a sub-agent has completed `max_tasks_per_agent` (default 5) tasks, or returns `ROTATION NEEDED`: read tasks.md for current state, note the completed tasks from the return, and spawn a fresh agent of the SAME type with the remaining tasks. Repeat until the group is complete.
 
-**Rotation hand-off:** the outgoing agent writes a hand-off note to `specs/_plans/<plan-name>/notes/<group-letter>.md` (its own duty, per its Early Termination section). `<group-letter>` is the group's letter only — the token before the `:` in its Parallelization-table `Group` entry (group `A: plan-log validation` → `notes/A.md`), never the full group name and never a slug of it. Add one line to the fresh agent's brief: `Orientation: read specs/_plans/<plan-name>/notes/<group-letter>.md first`. If the note is absent, omit the line. The note is working state inside the plan directory. It is never committed evidence, and it moves into the archive with the plan directory.
+**Rotation hand-off:** the outgoing agent writes a hand-off note to `specs/_plans/<plan-name>/notes/<group-letter>.md` (its own duty, per the `## Process` section of its brief). `<group-letter>` is the group's letter only — the token before the `:` in its Parallelization-table `Group` entry (group `A: plan-log validation` → `notes/A.md`), never the full group name and never a slug of it. Add one line to the fresh agent's brief: `Orientation: read specs/_plans/<plan-name>/notes/<group-letter>.md first`. If the note is absent, omit the line. The note is working state inside the plan directory. It is never committed evidence, and it moves into the archive with the plan directory.
 
 ## Workflow
 
 ### Phase 0: Load Project Hook (orchestrator)
 
-Check for `.speq/implement-hook.md` in the repo root.
-- **Present:** read it. Announce "Loaded project hook: .speq/implement-hook.md". Its content is authoritative: it can add to, change, or override any part of this workflow. If the hook conflicts with this workflow, the hook wins.
-- **Absent:** continue, no mention.
-
-Add a `Project Hook:` line (path only, not content) to every sub-agent brief below. `implementer-agent`, `implementer-expert-agent`, and `code-reviewer` read the hook themselves from that path.
+Load `.speq/implement-hook.md` per `/speq-plan`'s `references/hook-loading.md`. Pass its path (not its content) as a `Project Hook:` line to every sub-agent brief below; those agents read the hook themselves from that path.
 
 ### Phase 1: Load Plan
 
@@ -104,7 +100,7 @@ For each parallel group in plan's `## Parallelization`:
 
 1. **Route the whole group by its hardest task.** Any `[expert]` task routes the whole group to `implementer-expert-agent`. Otherwise the whole group goes to `implementer-agent`. One agent per group. Never split a group by tag: a group is one knowledge cluster, and each extra agent rebuilds the same mental model, which costs more than the model-price difference.
 2. **Mark started**: update tasks.md, `[ ]` → `[~]`.
-3. **Spawn one sub-agent for the group** with the invocation template below. If the plan's Parallelization table has a `Knowledge` column, copy the group's entry into the brief's `Knowledge:` line. If `decision-log.md`'s `## Design Decisions` has entries that touch this group's tasks, paste their Decision and Rationale verbatim into the brief's `## Rationale` section. The orchestrator already read the plan and its decision log once in Phase 1, so the sub-agent does not reread them for this. Omit `## Rationale` entirely when no entry touches this group.
+3. **Spawn one sub-agent for the group** with the invocation template below. If the plan's Parallelization table has a `Knowledge` column, copy the group's entry into the brief's `Knowledge:` line. If `decision-log.md`'s `## Design Decisions` has entries that touch this group's tasks, paste their Decision and Rationale verbatim into the brief's `## Rationale` section. Inline the full content of `references/implementer-process.md` as the brief's `## Process` section. The orchestrator already read the plan and its decision log once in Phase 1, so the sub-agent does not reread them for this. Omit `## Rationale` entirely when no entry touches this group.
 4. **Await completion**: the sub-agent returns results or a rotation signal.
 5. **Handle rotation**: apply the Rotation rule and Rotation hand-off above.
 6. **Mark completed**: update tasks.md, `[~]` → `[x]` (preserve the `[expert]` tag).
@@ -124,16 +120,16 @@ Delegate to <implementer-agent | implementer-expert-agent>: Implement <group-nam
 
 <verbatim Decision and Rationale of the decision-log.md ## Design Decisions entries that touch this group's tasks; omit this section if none do>
 
+## Process
+
+<inline the full content of references/implementer-process.md here: required skills, per-task steps, early termination, scope constraints>
+
 ## Context
 
 - Plan: specs/_plans/{plan_name}/plan.md
 - Tasks file: specs/_plans/{plan_name}/tasks.md
 - Knowledge: <the group's Knowledge entry: read these spec deltas and files first; omit if the plan has no Knowledge column>
 - Orientation: read specs/_plans/{plan_name}/notes/<group-letter>.md first <rotation respawns only>
-- Update tasks.md after each task completion (preserve task numbering)
-- The untagged tasks in the list are yours too: the group routes as one unit <expert groups only>
-- Preserve the [expert] tag when updating status markers <expert groups only>
-- Report the invariants the code now enforces <expert groups only>
 - Project Hook: <if active, ".speq/implement-hook.md: read it and apply it"; otherwise omit this line>
 ```
 
@@ -233,6 +229,7 @@ If context is lost or compacted:
 
 | File | Use When |
 |------|----------|
+| `references/implementer-process.md` | Inlined into every sub-agent brief's `## Process` section |
 | `references/verification-template.md` | Phase 6 report generation |
 | `references/implementation-summary-template.md` | Phase 7 summary |
 

@@ -22,9 +22,7 @@ Do not invoke `/speq-code-tools`: brownfield exploration (step 2) only reads man
 
 ### 0. Load Project Hook
 
-Check for `.speq/mission-hook.md` in the repo root.
-- **Present:** read it. Announce "Loaded project hook: .speq/mission-hook.md". Its content is authoritative: it can add to, change, or override any part of this workflow. If the hook conflicts with this workflow, the hook wins.
-- **Absent:** continue without mention.
+Load `.speq/mission-hook.md` per `/speq-plan`'s `references/hook-loading.md`.
 
 ### 1. Project Detection
 
@@ -80,7 +78,7 @@ For existing projects, gather context BEFORE interviewing:
 
 ### 3. Research Phase
 
-Research the technologies discovered or mentioned per `/speq-ext-research`. Use the results to inform interview questions and validate user choices.
+Research each technology discovered or mentioned per `/speq-ext-research`, and capture the current API or constraint the interview should confirm.
 
 ### 4. Clarifying Interview
 

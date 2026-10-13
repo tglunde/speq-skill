@@ -1,6 +1,6 @@
 ---
 name: speq-writing-guardrails
-description: Nine prose rules covering conclusion-first order, one idea per sentence, named actors, consistent names, plain explanations, no filler, neutral tone, current results only, and no em dashes. Triggered by /speq-mission, /speq-audit, /speq-implement, /speq-plan-pr, /speq-implement-pr, planner-agent, plan-reviewer, recorder-agent, architecture-agent, and code-reviewer.
+description: "Prose rules for speq artifacts and GitHub text. Triggered by /speq-mission, /speq-audit, /speq-implement, /speq-plan-pr, /speq-implement-pr, planner-agent, plan-reviewer, recorder-agent, architecture-agent, and code-reviewer."
 ---
 
 # Writing Guardrails

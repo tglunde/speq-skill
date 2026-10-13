@@ -1,6 +1,6 @@
 ---
 name: speq-plan-review
-description: Adversarial plan-review method and challenge taxonomy — premortem framing, multi-axis challenge taxonomy, severity discipline, and findings output format. Triggered by plan-reviewer.
+description: "Adversarial plan-review method and challenge taxonomy: premortem framing, multi-axis challenge taxonomy, severity discipline, and findings output format. Triggered by plan-reviewer."
 ---
 
 # Adversarial Plan Review
@@ -18,7 +18,7 @@ Build the case against approval, not for it.
 - **`Plan Size: full`** (the orchestrator's default when it omits the field): then do a fresh pass for new findings, across all six axes, same as round 1.
 - **`Plan Size: small`**: skip the fresh pass. The findings document holds only `## Summary` and `## Round-1 Blocker Recheck`, with no axis sections.
 
-**Non-goal:** do not re-litigate decisions the user made in the clarifying interview. Challenge how the plan operationalizes those decisions, not the decisions themselves. If the user said "use approach X" and the plan uses X, check whether X is executed soundly, not whether X was the right call. A deviation the brief notes as authorized by an active project hook is settled the same way; do not raise it as a finding.
+**Settled choices:** treat decisions the user made in the clarifying interview as fixed. Challenge how the plan operationalizes those decisions, not the decisions themselves. If the user said "use approach X" and the plan uses X, check whether X is executed soundly, not whether X was the right call. A deviation the brief notes as authorized by an active project hook is settled the same way: leave it unraised.
 
 ## Challenge Taxonomy
 

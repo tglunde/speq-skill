@@ -16,52 +16,7 @@ The orchestrator routes a whole parallelization group here when any task in the 
 - Security-sensitive code paths
 - Subtle correctness requirements where tests may pass but the code is still wrong
 
-## First: Invoke Required Skills
-
-BEFORE any implementation work, invoke these skills:
-- `/speq-code-tools`: semantic code navigation and editing
-- `/speq-ext-research`: library documentation
-- `/speq-code-guardrails`: TDD workflow and guardrails
-- `/speq-design-philosophy`: complexity-management design principles
-- `/speq-git-discipline`: version control rules
-- `/speq-cli`: spec discovery
-
-## Core Responsibilities
-
-1. **Implement assigned tasks only**: the whole routed group, tagged and untagged. Do not work on tasks outside your assignment.
-2. **Follow the TDD cycle** per `/speq-code-guardrails`.
-3. **Update tasks.md** after each task completion: `[~]` → `[x]` (preserve the `[expert]` tag).
-
-## Implementation Process
-
-For each assigned task:
-
-### 1. Orient
-
-If the brief has an `Orientation:` line, read that hand-off note first: it is your predecessor's mental model of this group. If the brief has a `Knowledge:` line, read the spec deltas and files it names next. These two lines replace a cold search.
-
-### 2. Fill Gaps Only
-
-Task details are already inline in `## Your Tasks`. If the brief has a `## Rationale` section, treat it as a verbatim excerpt from `decision-log.md` and do not re-read the log for it. Open `specs/_plans/{plan_name}/plan.md` or `specs/_plans/{plan_name}/decision-log.md` yourself only when you need context the brief does not cover (for example another group's decisions).
-
-### 3. Search Specs
-
-Use these for gaps the `Knowledge:` entry does not cover:
-
-```bash
-speq search query "<relevant terms>"
-speq feature get '<domain>/<feature>/<scenario>'
-```
-
-### 4. TDD Cycle
-Per `/speq-code-guardrails`. Write tests that target the invariants, failure modes, concurrent interactions, and edge cases that would break a naive implementation, not just the happy path.
-
-### 5. Update Progress
-After completing each task:
-```
-Edit: specs/_plans/{plan_name}/tasks.md
-Change: `[~] X.Y <task> [expert]` → `[x] X.Y <task> [expert]`
-```
+Follow the `## Process` section of your brief, which carries the shared implementer process: required skills, the per-task steps, early termination, and scope constraints. This file adds only the parts specific to an expert group.
 
 ## Fix-Task Mode
 
@@ -73,18 +28,10 @@ When the brief names a code-review findings file and one or two sections of it i
 
 The findings file is the whole scope: implement nothing it does not name, and do not re-review the code for defects of your own.
 
-## Scope Constraints
-
-- Implement ONLY tasks listed in your assignment (the routed group's untagged tasks included), or in Fix-Task Mode only the findings in the named section(s) of the named file
-- Edit ONLY your own numbered task lines in `tasks.md` (plus the lines you append in Fix-Task Mode)
-- Never edit a `## PR Lifecycle` section in `tasks.md`: it is the headless pipeline's checkpoint, not a work item
-- Do NOT add features not in spec
-- Do NOT refactor unrelated code
-- Do NOT modify files outside scope
-
 ## Output Format
 
 When all assigned tasks are complete:
+
 ```
 Completed expert tasks:
 - X.1: <description + invariants the code now enforces>
@@ -98,21 +45,3 @@ Key decisions: <any non-obvious tradeoffs that belong in the verification report
 ```
 
 Do not enumerate modified paths. The orchestrator recovers them from the working tree (`git diff --name-only <base>` plus the untracked-file list).
-
-## Early Termination
-
-If context is running low, first write a hand-off note to `specs/_plans/{plan_name}/notes/<group-letter>.md` (create the directory if absent). The filename is the group's letter only — the token before the `:` in its Parallelization-table `Group` entry (group `A: plan-log validation` → `notes/A.md`), never the full group name and never a slug of it. Keep it under one page, four headings: files that matter, invariants established, conventions observed, dead ends. Your successor reads this note instead of rebuilding your mental model from cold files. Then return:
-
-```
-ROTATION NEEDED
-
-Progress at termination:
-- X.1: completed
-- X.2: in progress (describe state)
-
-Remaining tasks:
-- X.3: <task> [expert]
-
-State: tasks.md is up to date
-Hand-off: specs/_plans/{plan_name}/notes/<group-letter>.md
-```

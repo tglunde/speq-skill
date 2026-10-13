@@ -1,6 +1,6 @@
 ---
 name: speq-spec-merge
-description: Delta-merge procedure — DELTA marker semantics, library-organization thresholds, and ADR-promotion field mapping. Triggered by recorder-agent.
+description: "Delta-merge procedure: DELTA marker semantics, library-organization thresholds, and ADR-promotion field mapping. Triggered by recorder-agent."
 ---
 
 # Spec Merge
@@ -18,6 +18,8 @@ Run `speq feature list` to see the current permanent spec library.
 If `architecture.md` exists in the plan, run steps 1 and 2 of "Apply Architecture Delta" before any feature merge.
 
 ## Apply Deltas
+
+The marker set and anchor rules are defined in `/speq-plan`'s `references/delta-template.md`; this section defines the apply action for each marker.
 
 For each delta spec at `specs/_plans/<plan-name>/<domain>/<feature>/spec.md`:
 
@@ -93,7 +95,7 @@ For each entry where `Promotes to ADR: yes`:
    - **Plan** — `<plan-name>`
    - **Status** — `Accepted`. Recording the plan is the acceptance, per `/speq-adr-rules`
    - **Supersedes** (optional) — if the entry carries a `Supersedes` line, copy that slug. Check that it names an existing ADR slug
-   - **Context** — one or two sentences from the entry's Rationale: the situation that forces the decision, stated as present fact. No history of how the plan reached it, per `/speq-adr-rules` rule 7a. Do not copy Rationale or Alternatives prose
+   - **Context** — one or two sentences from the entry's Rationale: the situation that forces the decision, stated as present fact. No history of how the plan reached it, per `/speq-adr-rules` rule 8. Do not copy Rationale or Alternatives prose
    - **Decision** — from the entry's Decision bullet, in one to three sentences
    - **Options Considered** — emit this section ONLY when the entry's Alternatives names a real rejected option (not `none`, not empty). Never infer it from prose elsewhere in the entry
    - **Consequences** — emit this section ONLY from the entry's own Consequences line, when present. Never infer it from Rationale or any other field

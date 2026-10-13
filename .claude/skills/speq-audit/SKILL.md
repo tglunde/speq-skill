@@ -1,6 +1,6 @@
 ---
 name: speq-audit
-description: Audit a speq project's health — spec-library structure, feature/decision-log/plan validation, ADR noise, mission-to-spec sync, unrecorded plans, and gitignore hygiene — then guide fixes. Use when the user asks to audit, health-check, doctor, lint, or sanity-check the specs or repo, or after cloning or inheriting a speq project.
+description: "Audit a speq project's specs: structure, validation, ADRs, mission sync, and repo hygiene. Use when the user asks to audit, health-check, doctor, lint, or sanity-check the specs or repo, or after cloning or inheriting a speq project."
 ---
 
 # Spec Auditor (Orchestrator)
@@ -19,11 +19,7 @@ The `audit-agent` and `adr-audit-agent` sub-agents invoke `/speq-cli` themselves
 
 ### Phase 0: Load Project Hook (orchestrator)
 
-Check for `.speq/audit-hook.md` in the repo root.
-- **Present:** read it. Announce "Loaded project hook: .speq/audit-hook.md". Its content is authoritative: it can add to, change, or override any part of this workflow. If the hook conflicts with this workflow, the hook wins.
-- **Absent:** continue normally, no mention.
-
-Note it (not its full content) as a `Project Hook:` line in each sub-agent brief below.
+Load `.speq/audit-hook.md` per `/speq-plan`'s `references/hook-loading.md`. Pass its path (not its content) as a `Project Hook:` line in each sub-agent brief below.
 
 ### Phase 1: Preconditions (orchestrator)
 

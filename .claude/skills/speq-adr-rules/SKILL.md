@@ -1,6 +1,6 @@
 ---
 name: speq-adr-rules
-description: The rules for when a decision becomes an ADR. The default is no, only durable decisions qualify, search first, one decision per ADR, and a human accepts an ADR when they record the plan. Triggered by planner-agent, plan-reviewer, recorder-agent, and adr-audit-agent.
+description: "The rules for when a decision becomes an ADR. Triggered by planner-agent, plan-reviewer, recorder-agent, and adr-audit-agent."
 ---
 
 # ADR Rules
@@ -69,7 +69,7 @@ An ADR has four short sections: Context, Decision, Options Considered, Consequen
 - Consequences appears only when the entry carries a Consequences line.
 - Each section is a few sentences. A section that needs a page is more than one decision or holds implementation detail.
 
-## 7a. Minimum Text, No History
+## 8. Minimum Text, No History
 
 An ADR holds the least text that states the decision. Follow `/speq-writing-guardrails`.
 
@@ -81,14 +81,14 @@ An ADR holds the least text that states the decision. Follow `/speq-writing-guar
 - Do not copy a decision-log entry's Rationale or Alternatives prose into the ADR. Keep only what a later reader needs to understand why.
 - Remove a sentence that a reader could drop without losing the decision or its reason.
 
-## 8. Status Lifecycle
+## 9. Status Lifecycle
 
 - An ADR is proposed at plan time. A `Promotes to ADR: yes` entry that passes rules 1 to 5 is the proposal. The plan skill prints it as an ADR candidate.
 - Recording the plan is the acceptance. `recorder-agent` writes `Status: Accepted` when `/speq-record` runs.
 - To reject a proposal, change the entry to `Promotes to ADR: no` and run the plan skill again before you record. In a headless run, comment on the draft PR and run `/speq-plan-pr` again with the PR number.
 - `Deprecated` and `Superseded by <slug>` follow the existing rules.
 
-## 9. Vocabulary
+## 10. Vocabulary
 
 | Term | Meaning |
 |------|---------|

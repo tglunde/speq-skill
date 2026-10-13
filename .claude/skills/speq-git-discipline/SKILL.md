@@ -1,6 +1,6 @@
 ---
 name: speq-git-discipline
-description: Read-only git guardrails. No history writes, verify changes before completing. Triggered by planner-agent, implementer-agent, implementer-expert-agent, and recorder-agent. The headless orchestrators speq-plan-pr and speq-implement-pr are the sole exception. They write git history directly and use /speq-git-operations instead of this skill.
+description: "Read-only git guardrails: no history writes, verify changes before completing. Triggered by planner-agent, implementer-agent, implementer-expert-agent, and recorder-agent. The headless orchestrators speq-plan-pr and speq-implement-pr are the sole exception; they write git history directly and use /speq-git-operations instead of this skill."
 ---
 
 # Git Discipline
@@ -47,4 +47,4 @@ git diff     # Review actual changes
 
 ## Commit Conventions
 
-Use Conventional Commits. This project also uses the type `spec` for spec changes.
+Commit message conventions are owned by `/speq-git-operations`.
