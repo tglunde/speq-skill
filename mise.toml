@@ -1,0 +1,23 @@
+# mise tasks for speq-skill development.
+#
+# `build` regenerates the plugin payload from the skill source in .claude/.
+# `install` builds the release CLI plus that payload, then installs them into
+# the local Claude, Codex, and Pi trees.
+
+[tasks.build]
+description = "Build the plugin payload and marketplace tree into dist/marketplace/"
+run = "./scripts/plugin/build.sh"
+
+[tasks.install]
+description = "Build the CLI and plugin, then install the CLI, skills, and agents locally"
+run = "./scripts/local-install.sh"
+
+# `eval:test` checks the eval harness itself and needs no credentials.
+# `eval:triggers` runs the live trigger eval and takes runner flags after `--`.
+[tasks."eval:test"]
+description = "Run the credential-free skill eval self-tests"
+run = "node --test evals/test/"
+
+[tasks."eval:triggers"]
+description = "Run the live trigger eval (needs a --model and provider credentials)"
+run = "node evals/run-trigger-evals.mjs"
