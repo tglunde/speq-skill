@@ -1,0 +1,7 @@
+{"type":"session","version":3,"id":"fix-ls-only","timestamp":"2026-01-01T00:00:00.000Z","cwd":"/tmp/ws"}
+{"type":"agent_start"}
+{"type":"turn_start"}
+{"type":"tool_execution_start","toolCallId":"c1","toolName":"bash","args":{"command":"ls -la /tree/skills/speq-plan/ /tree/skills/speq-plan-pr/","timeout":10000}}
+{"type":"tool_execution_end","toolCallId":"c1","toolName":"bash","args":{"command":"ls -la /tree/skills/speq-plan/ /tree/skills/speq-plan-pr/"},"isError":false,"durationMs":20}
+{"type":"agent_end","messages":[],"willRetry":false}
+{"type":"agent_settled","aborted":false}

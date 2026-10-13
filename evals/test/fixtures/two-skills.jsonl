@@ -1,0 +1,9 @@
+{"type":"session","version":3,"id":"fix-two-skills","timestamp":"2026-01-01T00:00:00.000Z","cwd":"/tmp/ws"}
+{"type":"agent_start"}
+{"type":"turn_start"}
+{"type":"tool_execution_start","toolCallId":"c1","toolName":"read","args":{"path":"/tree/skills/speq-plan/SKILL.md"}}
+{"type":"tool_execution_end","toolCallId":"c1","toolName":"read","args":{"path":"/tree/skills/speq-plan/SKILL.md"},"isError":false,"durationMs":11}
+{"type":"tool_execution_start","toolCallId":"c2","toolName":"read","args":{"path":"/tree/skills/speq-code-guardrails/SKILL.md"}}
+{"type":"tool_execution_end","toolCallId":"c2","toolName":"read","args":{"path":"/tree/skills/speq-code-guardrails/SKILL.md"},"isError":false,"durationMs":8}
+{"type":"agent_end","messages":[],"willRetry":false}
+{"type":"agent_settled","aborted":false}

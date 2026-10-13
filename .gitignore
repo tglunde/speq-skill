@@ -38,3 +38,9 @@ _ideas
 # Build output (regenerate with scripts/plugin/build.sh or scripts/release/build.sh)
 # Contains: plugin/, marketplace/, and release archives
 /dist
+
+# Eval run output. Traces and reports are written to a new timestamped
+# directory per invocation, and every trace embeds absolute workspace paths,
+# session ids, and timestamps. Promote the runs worth keeping into
+# /evals/baselines by hand. See evals/baselines/README.md.
+/evals/artifacts

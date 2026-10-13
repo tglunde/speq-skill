@@ -1,0 +1,8 @@
+{"type":"session","version":3,"id":"fix-advertised-only","timestamp":"2026-01-01T00:00:00.000Z","cwd":"/tmp/ws"}
+{"type":"agent_start"}
+{"type":"message_end","message":{"role":"system","content":"","sections":{"skills":"<skills>\n<skill>\nname: speq-plan\ndescription: Plan a feature.\npath: /tree/skills/speq-plan/SKILL.md\n</skill>\n<skill>\nname: speq-plan-pr\ndescription: Headless planning.\npath: /tree/skills/speq-plan-pr/SKILL.md\n</skill>\n</skills>"},"timestamp":1}}
+{"type":"turn_start"}
+{"type":"message_end","message":{"role":"assistant","content":[{"type":"text","text":"I will answer directly without loading any skill."}],"usage":{"input":900,"output":20,"totalTokens":920}}}
+{"type":"turn_end","message":{"role":"assistant","content":[{"type":"text","text":"I will answer directly without loading any skill."}]},"toolResults":[]}
+{"type":"agent_end","messages":[],"willRetry":false}
+{"type":"agent_settled","aborted":false}
