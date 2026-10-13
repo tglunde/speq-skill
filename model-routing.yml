@@ -42,14 +42,14 @@ agents:
     note: Tasks tagged `[expert]`
     claude: { model: opus, effort: xhigh }
     codex: { model: gpt-5.5, effort: xhigh }
-    pi: { model: opencode-go/deepseek-v4-pro, thinking: max }
+    pi: { model: opencode-go/glm-5.3, thinking: max }
 
   code-reviewer:
     file: .claude/agents/code-reviewer.md
     note: Adversarial implementation review
     claude: { model: opus, effort: xhigh }
     codex: { model: gpt-5.5, effort: xhigh }
-    pi: { model: opencode-go/glm-5.3, thinking: max }
+    pi: { model: opencode-go/grok-4.7, thinking: xhigh }
 
   audit-agent:
     file: .claude/agents/audit-agent.md
