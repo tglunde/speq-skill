@@ -33,7 +33,7 @@ speq feature get '<domain>/<feature>/<scenario>'
 
 ### 4. TDD Cycle
 
-Follow the RED → GREEN → REFACTOR cycle per `/speq-code-guardrails`. An expert task targets the invariants, failure modes, concurrent interactions, and edge cases that would break a naive implementation, not only the happy path.
+Follow the LIST → RED → GREEN → REFACTOR → REVISE cycle per `/speq-code-guardrails`. An expert task targets the invariants, failure modes, concurrent interactions, and edge cases that would break a naive implementation, not only the happy path.
 
 ### 5. Update Progress
 
@@ -41,7 +41,7 @@ After each task completion, edit `specs/_plans/{plan_name}/tasks.md` and change 
 
 ## Early Termination
 
-If context is running low or you have hit your task limit, write a hand-off note to `specs/_plans/{plan_name}/notes/<group-letter>.md` (create the directory if absent). `<group-letter>` is the token before the `:` in the group's Parallelization-table `Group` entry (group `A: plan-log validation` gives `notes/A.md`), never the full group name and never a slug of it. Keep it under one page under four headings: files that matter, invariants established, conventions observed, dead ends. Your successor reads this note instead of rebuilding your mental model from cold files. Then return:
+If context is running low or you have hit your task limit, write a hand-off note to `specs/_plans/{plan_name}/notes/<group-letter>.md` (create the directory if absent). `<group-letter>` is the token before the `:` in the group's Parallelization-table `Group` entry (group `A: plan-log validation` gives `notes/A.md`), never the full group name and never a slug of it. Keep it under one page under five headings: files that matter, invariants established, conventions observed, test list, dead ends. Under `test list`, record the items not yet crossed off, in order. Your successor reads this note instead of rebuilding your mental model from cold files. Then return:
 
 ```
 ROTATION NEEDED

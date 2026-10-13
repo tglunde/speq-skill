@@ -21,11 +21,21 @@ TDD workflow and quality guardrails. Draws on established practice, including wo
 
 ## TDD Cycle (London School)
 
+A test list is a written list of the behaviors you intend to test. The London School writes the list before the first test and revises it after every cycle.
+
 ```
-RED    → Write failing test, run it, show failure
-GREEN  → Minimal code to pass, run test, show pass
+LIST     → Write the test list before the first test
+RED      → Pick one item, write its failing test, run it, show failure
+GREEN    → Minimal code to pass, run test, show pass
 REFACTOR → Clean up, run test + lint, show output
+REVISE   → Cross the item off, add the cases this cycle revealed, return to RED
 ```
+
+- Take one item at a time. The list is ordered, not a batch to implement in one pass.
+- Write down every behavior you expect to need: happy path, boundary cases, error paths, and interactions with collaborators.
+- Revise the list at the end of every cycle. A cycle that reveals new behavior adds an item.
+- The session ends when the list is empty.
+- The list is session state. It is not a plan artifact, and it is not a comment in the test file. Carry it into the rotation hand-off note when you rotate.
 
 Run ONLY the test you created/changed, not the full suite.
 
