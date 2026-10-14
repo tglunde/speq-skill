@@ -13,9 +13,12 @@ import { fileURLToPath } from "node:url";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
+import { parseDataset } from "../lib/csv.mjs";
+
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, "..", "..");
 const RUNNER = join(REPO_ROOT, "evals", "run-trigger-evals.mjs");
+const DATASET = join(REPO_ROOT, "evals", "triggers.csv");
 const STUB = join(HERE, "fixtures", "stub-pi.mjs");
 
 function runRunner(args, env = {}) {
@@ -39,7 +42,9 @@ test("--list prints the dataset without launching pi", async () => {
   const result = await runRunner(["--list"]);
   assert.equal(result.code, 0, result.stderr);
   assert.match(result.stdout, /^e01\s+entry\s+speq-mission\s+trigger$/m);
-  assert.match(result.stdout, /49 rows\./);
+  // The dataset grows, so count it rather than pinning a number the next row breaks.
+  const rows = parseDataset(readFileSync(DATASET, "utf8")).length;
+  assert.match(result.stdout, new RegExp(`${rows} rows\\.`));
 });
 
 test("--dry-run prints the pi command for each selected row", async () => {

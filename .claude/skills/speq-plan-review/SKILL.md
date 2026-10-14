@@ -1,6 +1,6 @@
 ---
 name: speq-plan-review
-description: "Adversarial plan-review method and challenge taxonomy: premortem framing, multi-axis challenge taxonomy, severity discipline, and findings output format. Triggered by plan-reviewer."
+description: "Adversarial plan-review method and challenge taxonomy: premortem framing, multi-axis challenge taxonomy, severity discipline, and findings output format. An agent-internal method reference for plan-reviewer. Load it only when a review round is delegated or the method is named directly, such as a request to run the adversarial plan review and report findings in the required format. It is not the entry point when a user asks to review, challenge, or critique a plan; that starts at /speq-plan."
 ---
 
 # Adversarial Plan Review

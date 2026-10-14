@@ -9,6 +9,7 @@
  * @typedef {object} RunOutcome
  * @property {"ok"|"error"} status
  * @property {string[]} loaded   Skill names loaded in the run.
+ * @property {string|null} entry The first skill the run reached for.
  * @property {string[]} advertised
  * @property {object} stats
  * @property {string} [error]    Failure detail when status is "error".
@@ -17,13 +18,20 @@
 
 /**
  * Score a single run: did the named skill's presence match the expectation?
+ *
+ * The two expectations ask different questions. A `true` row asks whether the
+ * skill's instructions entered context at all, so it scores on the loaded set.
+ * A `false` row asks whether the model chose that skill, so it scores on the
+ * entry point; a skill the chosen entry point reads itself is a documented
+ * delegation, not a mis-trigger.
  * @param {{skill: string, should_trigger: string}} row
  * @param {RunOutcome} run
  * @returns {boolean}
  */
 export function scoreRun(row, run) {
-  const loaded = run.loaded.includes(row.skill);
-  return loaded === (row.should_trigger === "true");
+  const expected = row.should_trigger === "true";
+  const observed = expected ? run.loaded.includes(row.skill) : run.entry === row.skill;
+  return observed === expected;
 }
 
 /**
@@ -47,6 +55,7 @@ export function gradeRow(row, runs) {
     usableRuns: usable.length,
     errors: runs.length - usable.length,
     loadedUnion: [...new Set(usable.flatMap((run) => run.loaded))].sort(),
+    entryUnion: [...new Set(usable.map((run) => run.entry).filter(Boolean))].sort(),
   };
 
   if (usable.length === 0) {
@@ -167,6 +176,7 @@ export function renderMarkdown(report) {
       lines.push(`> ${row.prompt}`);
       lines.push("");
       lines.push(`- Passed ${row.passes} of ${row.usableRuns} runs`);
+      lines.push(`- Entry: ${row.entryUnion.length === 0 ? "(nothing)" : row.entryUnion.join(", ")}`);
       lines.push(`- Loaded: ${row.loadedUnion.length === 0 ? "(nothing)" : row.loadedUnion.join(", ")}`);
       lines.push(`- Why this expectation: ${row.rationale}`);
       lines.push("");
@@ -179,11 +189,11 @@ export function renderMarkdown(report) {
   if (flaky.length === 0) {
     lines.push("None.");
   } else {
-    lines.push("| Row | Skill | Expected | Passes | Loaded |");
-    lines.push("|---|---|---|---|---|");
+    lines.push("| Row | Skill | Expected | Passes | Entry | Loaded |");
+    lines.push("|---|---|---|---|---|---|");
     for (const row of flaky) {
       lines.push(
-        `| ${row.id} | ${row.skill} | ${row.expected ? "trigger" : "no trigger"} | ${row.passes}/${row.usableRuns} | ${row.loadedUnion.join(", ") || "(nothing)"} |`,
+        `| ${row.id} | ${row.skill} | ${row.expected ? "trigger" : "no trigger"} | ${row.passes}/${row.usableRuns} | ${row.entryUnion.join(", ") || "(nothing)"} | ${row.loadedUnion.join(", ") || "(nothing)"} |`,
       );
     }
   }
@@ -191,11 +201,11 @@ export function renderMarkdown(report) {
 
   lines.push("## All rows");
   lines.push("");
-  lines.push("| Row | Class | Skill | Expected | Verdict | Passes | Also loaded |");
-  lines.push("|---|---|---|---|---|---|---|");
+  lines.push("| Row | Class | Skill | Expected | Verdict | Passes | Entry | Also loaded |");
+  lines.push("|---|---|---|---|---|---|---|---|");
   for (const row of report.rows) {
     lines.push(
-      `| ${row.id} | ${row.class} | ${row.skill} | ${row.expected ? "trigger" : "no trigger"} | ${row.verdict} | ${row.passes}/${row.usableRuns} | ${row.noise?.join(", ") || ""} |`,
+      `| ${row.id} | ${row.class} | ${row.skill} | ${row.expected ? "trigger" : "no trigger"} | ${row.verdict} | ${row.passes}/${row.usableRuns} | ${row.entryUnion?.join(", ") || ""} | ${row.noise?.join(", ") || ""} |`,
     );
   }
   lines.push("");

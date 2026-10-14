@@ -13,6 +13,12 @@
 //   2. `speq-plan` is a prefix of `speq-plan-pr`. The matcher therefore anchors
 //      on the directory boundary (`skills/<name>/`) and requires a file below
 //      it, so a bare `ls` of a skill directory is not a load either.
+//
+// A load is not the same as a choice. The orchestrator skills are required by
+// their own text to read sibling skills (`speq-plan-pr` reads `/skill:speq-plan`
+// references, `speq-code-review` reads `/skill:speq-code-guardrails`). Those
+// reads are delegations from the entry point, so `entrySkill` reports the first
+// skill a run reached for and the grader scores a "must not trigger" row on it.
 
 /** Matches a file path inside a skill directory and captures the skill name. */
 const SKILL_FILE = /skills\/(speq-[a-z0-9-]+)\/(?:[A-Za-z0-9_.-]+\/)*[A-Za-z0-9_.-]+\.[A-Za-z0-9]+/g;
@@ -96,6 +102,22 @@ export function loadedSkills(events) {
 }
 
 /**
+ * The skill a run reached for first, from tool-call arguments in stream order.
+ * This is the run's entry point: the skill whose instructions the model chose
+ * to follow. Null when the run read no skill file at all.
+ * @param {object[]} events
+ * @returns {string|null}
+ */
+export function entrySkill(events) {
+  for (const args of collectToolArguments(events)) {
+    const text = safeStringify(args);
+    if (text === "") continue;
+    for (const match of text.matchAll(SKILL_FILE)) return match[1];
+  }
+  return null;
+}
+
+/**
  * Skill names the system prompt advertised. This is a diagnostic: it confirms
  * the eval loaded the intended tree, and it separates "the skill was never
  * offered" from "the model did not pick it".
@@ -145,11 +167,12 @@ export function runStats(events) {
 /**
  * Turn one captured run into the facts the grader needs.
  * @param {object[]} events
- * @returns {{loaded: string[], advertised: string[], stats: object}}
+ * @returns {{loaded: string[], entry: string|null, advertised: string[], stats: object}}
  */
 export function summarizeRun(events) {
   return {
     loaded: [...loadedSkills(events)].sort(),
+    entry: entrySkill(events),
     advertised: [...advertisedSkills(events)].sort(),
     stats: runStats(events),
   };

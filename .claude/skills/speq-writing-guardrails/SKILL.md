@@ -1,6 +1,6 @@
 ---
 name: speq-writing-guardrails
-description: "Prose rules for speq artifacts and GitHub text. Triggered by /speq-mission, /speq-audit, /speq-implement, /speq-plan-pr, /speq-implement-pr, planner-agent, plan-reviewer, recorder-agent, architecture-agent, and code-reviewer."
+description: "Prose rules for governed speq artifacts and GitHub text: plan.md, spec.md, mission.md, architecture.md, decision logs, ADR fragments, review findings, verification reports, implementation summaries, PRs, issues, and comments. Loaded by /speq-mission, /speq-audit, /speq-implement, /speq-plan-pr, /speq-implement-pr, planner-agent, plan-reviewer, recorder-agent, architecture-agent, and code-reviewer. It is not a general prose editor, so READMEs, docs, and other ungoverned files are out of scope."
 ---
 
 # Writing Guardrails

@@ -1,6 +1,6 @@
 ---
 name: speq-plan
-description: "Plan a feature or change through a clarifying interview, producing spec deltas, plan.md, and decision-log.md via planner-agent with adversarial review. Use when the user asks to plan, spec, design, or scope a new feature, a change or removal of existing behavior, a refactor, or a fix, before any implementation."
+description: "Plan a feature or change through a clarifying interview, producing spec deltas, plan.md, and decision-log.md via planner-agent with adversarial review. Use when the user asks to plan, spec, design, or scope a new feature, a change or removal of existing behavior, a refactor, or a fix, before any implementation, or asks to review, challenge, or critique an existing plan or plan.md."
 ---
 
 # Spec Planner (Orchestrator)

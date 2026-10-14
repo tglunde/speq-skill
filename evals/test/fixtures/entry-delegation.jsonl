@@ -1,0 +1,13 @@
+{"type":"session","version":3,"id":"fix-entry-delegation","timestamp":"2026-01-01T00:00:00.000Z","cwd":"/tmp/ws"}
+{"type":"agent_start"}
+{"type":"turn_start"}
+{"type":"tool_execution_start","toolCallId":"c1","toolName":"read","args":{"path":"/tree/skills/speq-plan-pr/SKILL.md","offset":1,"limit":400}}
+{"type":"tool_execution_end","toolCallId":"c1","toolName":"read","args":{"path":"/tree/skills/speq-plan-pr/SKILL.md","offset":1,"limit":400},"isError":false,"durationMs":9}
+{"type":"tool_execution_start","toolCallId":"c2","toolName":"read","args":{"path":"/tree/skills/speq-plan/references/review-loop.md","offset":1,"limit":500}}
+{"type":"tool_execution_end","toolCallId":"c2","toolName":"read","args":{"path":"/tree/skills/speq-plan/references/review-loop.md","offset":1,"limit":500},"isError":false,"durationMs":7}
+{"type":"tool_execution_start","toolCallId":"c3","toolName":"read","args":{"path":"/tree/skills/speq-plan/SKILL.md","offset":1,"limit":500}}
+{"type":"tool_execution_end","toolCallId":"c3","toolName":"read","args":{"path":"/tree/skills/speq-plan/SKILL.md","offset":1,"limit":500},"isError":false,"durationMs":8}
+{"type":"tool_execution_start","toolCallId":"c4","toolName":"read","args":{"path":"/tree/skills/speq-code-guardrails/SKILL.md","offset":1,"limit":300}}
+{"type":"tool_execution_end","toolCallId":"c4","toolName":"read","args":{"path":"/tree/skills/speq-code-guardrails/SKILL.md","offset":1,"limit":300},"isError":false,"durationMs":6}
+{"type":"agent_end","messages":[],"willRetry":false}
+{"type":"agent_settled","aborted":false}

@@ -14,7 +14,7 @@ import { test } from "node:test";
 
 import { parseCsvRows, parseDataset, validateDataset } from "../lib/csv.mjs";
 import { buildReport, gradeRow, renderMarkdown } from "../lib/grade.mjs";
-import { advertisedSkills, loadedSkills, parseJsonl, summarizeRun } from "../lib/trace.mjs";
+import { advertisedSkills, entrySkill, loadedSkills, parseJsonl, summarizeRun } from "../lib/trace.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const FIXTURES = join(HERE, "fixtures");
@@ -26,8 +26,8 @@ function fixtureEvents(name) {
   return parseJsonl(readFileSync(join(FIXTURES, `${name}.jsonl`), "utf8"));
 }
 
-function okRun(loaded) {
-  return { status: "ok", loaded, advertised: [], stats: {} };
+function okRun(loaded, entry = loaded[0] ?? null) {
+  return { status: "ok", loaded, entry, advertised: [], stats: {} };
 }
 
 test("csv reader handles quoted commas, doubled quotes, and quoted newlines", () => {
@@ -97,8 +97,27 @@ test("a skill read through codemode counts as loaded", () => {
 test("run summary reports loaded skills and token totals", () => {
   const summary = summarizeRun(fixtureEvents("read-target-skill"));
   assert.deepEqual(summary.loaded, ["speq-plan"]);
+  assert.equal(summary.entry, "speq-plan");
   assert.equal(summary.stats.inputTokens, 1200);
   assert.equal(summary.stats.totalTokens, 1240);
+});
+
+test("the entry skill is the first skill file read, not the first alphabetically", () => {
+  assert.equal(entrySkill(fixtureEvents("entry-delegation")), "speq-plan-pr");
+});
+
+test("a run that read no skill file has no entry skill", () => {
+  assert.equal(entrySkill(fixtureEvents("advertised-only")), null);
+  assert.equal(entrySkill(fixtureEvents("ls-only")), null);
+});
+
+test("a reference file read by the entry point does not count as an entry", () => {
+  assert.deepEqual([...loadedSkills(fixtureEvents("entry-delegation"))].sort(), [
+    "speq-code-guardrails",
+    "speq-plan",
+    "speq-plan-pr",
+  ]);
+  assert.equal(entrySkill(fixtureEvents("entry-delegation")), "speq-plan-pr");
 });
 
 const row = { id: "x", class: "entry", skill: "speq-plan", should_trigger: "true", prompt: "p", rationale: "r" };
@@ -136,6 +155,26 @@ test("a negative row fails when the skill loads anyway", () => {
   const negative = { ...row, should_trigger: "false" };
   assert.equal(gradeRow(negative, [okRun(["speq-plan"]), okRun(["speq-plan"]), okRun(["speq-plan"])]).verdict, "FAIL");
   assert.equal(gradeRow(negative, [okRun([]), okRun([]), okRun([])]).verdict, "PASS");
+});
+
+test("a negative row passes when the entry point delegates to the named skill", () => {
+  const delegated = { ...row, should_trigger: "false" };
+  const run = () => okRun(["speq-plan-pr", "speq-plan"], "speq-plan-pr");
+  const graded = gradeRow(delegated, [run(), run(), run()]);
+  assert.equal(graded.verdict, "PASS");
+  assert.deepEqual(graded.entryUnion, ["speq-plan-pr"]);
+  assert.deepEqual(graded.loadedUnion, ["speq-plan", "speq-plan-pr"]);
+});
+
+test("a negative row fails when the named skill is the entry point, even if a sibling follows", () => {
+  const negative = { ...row, should_trigger: "false" };
+  const run = () => okRun(["speq-plan", "speq-cli"], "speq-plan");
+  assert.equal(gradeRow(negative, [run(), run(), run()]).verdict, "FAIL");
+});
+
+test("a positive row still scores on the loaded set when a sibling is read first", () => {
+  const run = () => okRun(["speq-plan", "speq-planning"], "speq-plan");
+  assert.equal(gradeRow(row, [run(), run(), run()]).verdict, "PASS");
 });
 
 test("a row whose runs never reached the model is an error, not a failure", () => {

@@ -86,10 +86,20 @@ The runner writes every trace to `evals/artifacts/<timestamp>/`, plus `report.md
 
 Pi has no skill-invocation event. It advertises each skill by name, description, and path in the system prompt, then loads the full instructions only when the model reads the file. A skill therefore counts as loaded when a tool call touches a file inside that skill's directory.
 
-Two traps shape the matcher, and `evals/test/grade.test.mjs` pins both.
+Three traps shape the matcher, and `evals/test/grade.test.mjs` pins all three.
 
 1. The system prompt already contains every skill path. Scanning the whole trace would report every advertised skill as loaded, so the matcher reads tool-call arguments only.
 2. `speq-plan` is a prefix of `speq-plan-pr`. The matcher anchors on the directory boundary and requires a file below it. Listing a skill directory is not a load.
+3. A load is not a choice. The orchestrator skills are required by their own text to read sibling skills, so `speq-plan-pr` reads `/skill:speq-plan`'s references and `speq-code-review` reads `/skill:speq-code-guardrails`. Those reads are delegations from the entry point, not a second trigger.
+
+### Loaded versus entry
+
+The two expectations in the dataset ask different questions, and each is scored on the measure that answers it.
+
+- A `should_trigger=true` row asks whether the skill's instructions entered context at all. It is scored on the loaded set.
+- A `should_trigger=false` row asks whether the model *chose* that skill. It is scored on the entry skill: the first skill file the run read, in stream order. A skill the entry point reads itself is a documented delegation, not a mis-trigger.
+
+Both values are reported per row, so a run that entered correctly and then delegated still shows the full loaded set.
 
 ## The dataset
 
@@ -97,10 +107,10 @@ Two traps shape the matcher, and `evals/test/grade.test.mjs` pins both.
 
 | Class | Meaning | Rows |
 |---|---|---|
-| `entry` | A user prompt must load the named skill. | 10 |
-| `boundary` | A user prompt must not load the named skill, because a sibling owns it. | 15 |
-| `internal-negative` | A user prompt must not load the named agent-internal skill. | 11 |
-| `internal-positive` | An agent instruction must load the named agent-internal skill. | 13 |
+| `entry` | A user prompt must load the named skill. | 11 |
+| `boundary` | A user prompt must not *choose* the named skill, because a sibling owns it. | 14 |
+| `internal-negative` | A user prompt must not choose the named agent-internal skill. | 12 |
+| `internal-positive` | An agent instruction must load the named agent-internal skill. | 14 |
 
 Two invariants hold, and the test suite enforces both. Every skill in the payload tree appears in the dataset. Every skill appears with at least one `should_trigger=true` row and at least one `should_trigger=false` row.
 
@@ -115,7 +125,7 @@ The report leads with the score, then breaks it down by class.
 - **ERROR** means the runs never reached the model. A missing API key produces this, not a trigger defect.
 - **Not unanimous** lists rows that split across runs. A row that passes 2 of 3 is a weaker signal than one that passes 3 of 3, and it is the first place to look when a score moves.
 
-Each row also reports the skills it loaded beyond the one under test. A run that loads the right skill plus four others is not the same result as a run that loads only the right one.
+Each row also reports the entry skill and the skills it loaded beyond the one under test. A run that loads the right skill plus four others is not the same result as a run that loads only the right one. On a failure the report prints both lines, so a wrong entry point reads differently from a correct entry point that delegated.
 
 ## Baselines
 
@@ -129,7 +139,7 @@ A baseline records a hash of the skill files it measured, so two baselines with 
 
 ## Cost
 
-The full dataset is 49 rows. At the default of 3 runs per row that is 147 Pi runs. Start with `--only` on a handful of rows, then widen.
+The full dataset is 51 rows. At the default of 3 runs per row that is 153 Pi runs. Start with `--only` on a handful of rows, then widen.
 
 ## Limits
 
