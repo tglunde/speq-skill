@@ -96,6 +96,7 @@ When the sub-agent returns:
 1. Confirm `speq plan validate <plan-name>` passed. Re-run if uncertain.
 2. List all created files.
 3. If the sub-agent escalated a question, resolve it with the user and respawn with the clarification.
+4. **Design Confirmation gate.** Read the `## Design Decisions` entries that carry an `**Interface:**` line. If there are none, say so and continue. Otherwise present each proposal with `AskUserQuestion` — one question per seam or format, with the proposed signature in the option description. The user approves, or gives guidance and you respawn `planner-agent`. An approved design is a settled choice: `plan-reviewer` challenges how it is executed, not the choice itself.
 
 ### 6. Adversarial Plan Review (orchestrator)
 
@@ -141,3 +142,4 @@ Each sub-agent pins its own model and effort in its frontmatter, so planning qua
 | Asking the user about a `MECHANICAL` finding | Round count is not the escalation test — `Escalation: HUMAN` is; fix mechanical findings directly, no interruption |
 | Running round 2 when round 1's `HUMAN` count is 0 | A round with nothing judgment-worthy left doesn't need a second adversarial pass — fix and ship |
 | Persisting ADVISORY findings or looping on them | Report-only; they never gate |
+| Skipping the Design Confirmation gate when interface entries exist | The user must confirm the seam and signature proposals before implementation, not discover them in the code |

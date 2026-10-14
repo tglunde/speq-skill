@@ -17,10 +17,12 @@ Promotion gate: /speq-adr-rules. Default "Promotes to ADR: no".
 ## Design Decisions
 
 <!-- Key design choices made in this plan. One entry per significant decision. -->
+<!-- An interface-design entry (step 2b of /speq-planning) adds the Interface line and keeps Promotes to ADR: no. -->
 
 ### [1] <Short decision title>
 
 - **Decision:** What was chosen.
+- **Interface:** <the proposed signature or data format, in a fenced block; interface-design entries only> <!-- optional -->
 - **Alternatives:** What else was considered and why rejected. May read `none`.
 - **Rationale:** Why this choice. For `yes`, name the /speq-adr-rules criterion and the search result.
 - **Consequences:** Effects, trade-offs, or corollary decisions folded in here. Omit this line entirely when there are none. <!-- optional -->

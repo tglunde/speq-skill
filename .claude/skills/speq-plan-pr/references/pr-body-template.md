@@ -20,6 +20,8 @@ On a terminal print, drop the `<details>`/`<summary>` HTML — it's a GitHub fol
 
 ADR candidates: <none | titles of the `Promotes to ADR: yes` entries>
 
+Interface design: <none | one line per seam or format, pointing to the decision-log.md entry>
+
 Architecture: <none | none (specs/architecture.md absent) | § Components (changed), § Deployment (new)>
 
 <details>
@@ -37,6 +39,8 @@ Test plan
 ## Rules
 
 - **`ADR candidates` is one line.** Write `none` when no entry promotes, which is the usual case. Otherwise list the entry titles. Each title is a proposed ADR. Running `/speq-implement-pr` accepts them. To reject one, comment on the PR and run `/speq-plan-pr` again with the entry set to `Promotes to ADR: no`. After recording, `/speq-implement-pr` replaces the line with the accepted slugs.
+
+- **`Interface design` is one line.** Write `none` when the plan introduces no module seam, public interface, or data format. Otherwise name each seam or format and point to its `decision-log.md` entry. Never paste a full signature block; the entry holds it. This is the headless confirmation surface: the reviewer sees the proposed design here before approving the PR.
 
 - **`Architecture` is one line.** Write `none` when the plan has no architecture delta, or `none (specs/architecture.md absent)` in a repo without that file. Otherwise list each changed section with `changed`, `new`, or `removed`. Never paste section content. The delta file holds it. After recording, `/speq-implement-pr` rewrites the line as `Architecture: merged into specs/architecture.md: <sections>`.
 

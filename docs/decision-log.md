@@ -56,6 +56,8 @@ To drop a candidate, set the entry to `Promotes to ADR: no` and run `/speq:plan`
 
 `Alternatives` may read `none`. `Consequences` and `Supersedes` (the slug of the ADR this replaces) are optional.
 
+An interface-design entry adds an optional `**Interface:**` line holding the proposed signature or data format. It always carries `Promotes to ADR: no`: `/speq:adr-rules` rule 3 excludes signatures and data layout inside one module from an ADR.
+
 The file is optional. If present, `speq plan validate` verifies its structure.
 
 ## Permanent log

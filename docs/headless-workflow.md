@@ -27,6 +27,7 @@ Run `/speq:plan-pr <intent>`.
 
 - Creates the branch `feat/<plan-name>` and opens a draft PR
 - Works without an interview. Where `/speq:plan` would ask you, it takes a documented default, or posts an open question on the PR
+- Proposes the module seams and data formats the change introduces in the PR body, for you to confirm when you review the draft
 
 ## Answer questions on the PR
 

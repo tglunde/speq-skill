@@ -52,9 +52,10 @@ Tag every finding. Group findings by axis in the output.
 
 ### Design Depth: does the plan manage complexity well? (per `/speq-design-philosophy`)
 
-`decision-log.md` is the input surface for `[ADR_OVERPROMOTION]`: check every `Promotes to ADR: yes` entry against `/speq-adr-rules`. `decision-log.md`, `plan.md`, and `architecture.md` (the delta, if present) are the input surface for `[ARCHITECTURE_DRIFT]`. The `speq decision-log show` output, the accepted ADRs, is the input surface for `[ADR_CONFLICT]`.
+`decision-log.md` is the input surface for `[MISSING_DESIGN]`: check that a plan introducing a module seam, public interface, or data format has an `**Interface:**` entry. `decision-log.md` is also the input surface for `[ADR_OVERPROMOTION]`: check every `Promotes to ADR: yes` entry against `/speq-adr-rules`. `decision-log.md`, `plan.md`, and `architecture.md` (the delta, if present) are the input surface for `[ARCHITECTURE_DRIFT]`. The `speq decision-log show` output, the accepted ADRs, is the input surface for `[ADR_CONFLICT]`.
 
 - `[SHALLOW_DESIGN]`: a planned module/interface is shallow relative to the complexity it should hide.
+- `[MISSING_DESIGN]` (BLOCKER): a plan that introduces a new module seam, public interface, or data format has no interface-design entry in `decision-log.md` (an `**Interface:**` line). The trigger is `/speq-design-philosophy`'s Quick Diagnostic. Fix: add the entry, or state in the plan why the change introduces no seam, interface, or format. Escalation: `MECHANICAL`.
 - `[INFORMATION_LEAKAGE]`: a design decision (format, protocol, temporal split) reflected across multiple planned modules.
 - `[TACTICAL_SHORTCUT]`: a tactical shortcut with no scheduled strategic follow-up.
 - `[BOUNDARY_VIOLATION]`: planned business logic depends directly on a delivery mechanism, storage engine, or framework.

@@ -62,6 +62,8 @@ Per Martin's *Clean Architecture*:
 
 If a change introduces a new module, interface, or boundary, answer every question. No silent pass. A "no" names the fix. A change that introduces none of these can skip the table.
 
+This trigger is also the trigger for a plan's interface-design entry (`/speq-planning` step 2b): a plan that introduces a module seam, public interface, or data format states the proposed seam and signatures there, and the human confirms them before implementation.
+
 | Question | If no |
 |----------|-------|
 | Does a one-sentence summary capture what a module is responsible for? | It's doing too much, or nothing coherent — split it |

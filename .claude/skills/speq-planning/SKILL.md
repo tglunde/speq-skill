@@ -50,6 +50,18 @@ Decide whether the plan changes the architecture: a component, boundary, interfa
 - If `specs/architecture.md` is absent, write no delta. State `Architecture: no change: specs/architecture.md absent` in the decision log entry.
 - Never edit `specs/architecture.md` itself. `/speq-record` merges the delta.
 
+### 2b. Author Interface Design
+
+Trigger: the plan introduces or changes a module seam, a public interface, or a data format. This is the same trigger as `/speq-design-philosophy`'s Quick Diagnostic ("a change introduces a new module, interface, or boundary"). A plan that introduces none of these writes no interface-design entry and states so in `decision-log.md`.
+
+When triggered, write one `## Design Decisions` entry per seam or format, before the tasks:
+
+- **Seam**: the module that owns the decision, what it hides, and where its boundary sits against its neighbours
+- **Interface**: the proposed signatures or data format in a fenced block, with the types a caller must know
+- **Rationale**: justify the seam against `/speq-design-philosophy`'s Quick Diagnostic (deep vs. shallow, one owner per decision, dependency direction)
+
+Add the `**Interface:**` line to the entry per `/speq-plan`'s `references/decision-log-plan-template.md`. An interface-design entry always carries `Promotes to ADR: no`: `/speq-adr-rules` rule 3 classifies signatures and data layout inside one module as implementation detail. The human confirms these entries at `speq-plan`'s Design Confirmation gate before `plan-reviewer` runs.
+
 ### 3. Test Mapping and Verification
 
 Every scenario requires two forms of external proof. No claims, only evidence.
@@ -86,7 +98,7 @@ Create `specs/_plans/<plan-name>/decision-log.md` from `/speq-plan`'s `reference
 
 **What to capture:**
 - **Interview section**: verbatim or close paraphrase of every Q&A exchange passed from the orchestrator
-- **Design Decisions section**: one entry per significant choice made while authoring spec deltas or plan.md (how this plan builds the change, patterns and local interfaces, rejected alternatives, scope boundaries). For a new abstraction or module boundary, justify it in the entry's Rationale against `/speq-design-philosophy`'s Quick Diagnostic (deep vs. shallow, dependency direction)
+- **Design Decisions section**: one entry per significant choice made while authoring spec deltas or plan.md (how this plan builds the change, patterns and local interfaces, rejected alternatives, scope boundaries), including the interface-design entries from step 2b. For a new abstraction or module boundary, justify it in the entry's Rationale against `/speq-design-philosophy`'s Quick Diagnostic (deep vs. shallow, dependency direction)
 - **Architecture field**: an entry with `Promotes to ADR: yes` whose Rationale names `/speq-adr-rules` rule-2 criterion 1, 2, or 3 needs an `- **Architecture:** <§ Section[, § Section] | no change: <reason>>` line. Every named section needs a block in the architecture delta
 - **Review Findings section**: leave empty; populated in Revision Mode after `plan-reviewer` blockers, and by `speq-implement` after code review
 
@@ -154,7 +166,7 @@ Check your artifacts do not trip `/speq-plan-review`'s finding tags, across its 
 - **Feasibility**: no `[EFFORT_MISESTIMATION]` (a task line that hides more work than it states), `[HIDDEN_DEPENDENCY]` (an unmodeled prerequisite), `[UNSTATED_ASSUMPTION]` (a load-bearing belief never stated), or `[NFR_IGNORED]` (security, performance, migration, or concurrency left untouched where the change touches it).
 - **Requirement Quality**: no `[AMBIGUOUS_REQUIREMENT]` (not testable as written), `[COMPLETENESS_GAP]` (a missing edge case or error path), `[REQUIREMENT_CONFLICT]` (contradicts another delta or a recorded spec — check via `/speq-cli`), or `[IMPLEMENTATION_LEAKAGE]` (a Background or Feature description fact no scenario step depends on).
 - **Task Breakdown**: no `[TRACEABILITY_GAP]` (a delta with no implementing task, or the reverse), `[TASK_GRANULARITY]` (a task too large to verify as one unit), or `[CLUSTER_INCOHERENCE]` (a Parallelization group sliced by layer, or overlapping `Knowledge` entries across groups).
-- **Design Depth** (per `/speq-design-philosophy`): no `[SHALLOW_DESIGN]`, `[INFORMATION_LEAKAGE]` (a format or protocol decision reflected across modules), `[TACTICAL_SHORTCUT]` with no scheduled follow-up, `[BOUNDARY_VIOLATION]` (business logic depending directly on a delivery mechanism, storage engine, or framework), `[ADR_OVERPROMOTION]` (a `Promotes to ADR: yes` entry with no named criterion, no search result, never-an-ADR content, or implementation detail in Decision, per `/speq-adr-rules`), `[ARCHITECTURE_DRIFT]` (a qualifying ADR entry with no `Architecture:` line, a named section the delta lacks, or `no change` with no reason; a component, boundary, interface, data flow, constraint, or external dependency in `plan.md` that the delta lacks; or a delta that breaks the delta template), or `[ADR_CONFLICT]` (a decision, spec delta, or architecture delta that contradicts an accepted ADR with no superseding entry).
+- **Design Depth** (per `/speq-design-philosophy`): no `[SHALLOW_DESIGN]`, `[MISSING_DESIGN]` (a plan that introduces a module seam, public interface, or data format with no `**Interface:**` entry), `[INFORMATION_LEAKAGE]` (a format or protocol decision reflected across modules), `[TACTICAL_SHORTCUT]` with no scheduled follow-up, `[BOUNDARY_VIOLATION]` (business logic depending directly on a delivery mechanism, storage engine, or framework), `[ADR_OVERPROMOTION]` (a `Promotes to ADR: yes` entry with no named criterion, no search result, never-an-ADR content, or implementation detail in Decision, per `/speq-adr-rules`), `[ARCHITECTURE_DRIFT]` (a qualifying ADR entry with no `Architecture:` line, a named section the delta lacks, or `no change` with no reason; a component, boundary, interface, data flow, constraint, or external dependency in `plan.md` that the delta lacks; or a delta that breaks the delta template), or `[ADR_CONFLICT]` (a decision, spec delta, or architecture delta that contradicts an accepted ADR with no superseding entry).
 
 Open `/speq-plan-review` for a tag's full definition if you are unsure it applies.
 

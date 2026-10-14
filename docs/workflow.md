@@ -25,6 +25,7 @@ Run `/speq:mission` once per project.
 Run `/speq:plan <intent>`.
 
 - Interviews you about the change
+- Proposes the module seams and data formats the change introduces, for you to confirm
 - Writes a plan in `specs/_plans/<plan-name>/`: `plan.md`, spec deltas, `decision-log.md`, and an optional `architecture.md` delta
 - Has a reviewer agent challenge the plan first
 
