@@ -44,3 +44,4 @@ _ideas
 # session ids, and timestamps. Promote the runs worth keeping into
 # /evals/baselines by hand. See evals/baselines/README.md.
 /evals/artifacts
+.pi

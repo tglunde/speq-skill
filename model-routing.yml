@@ -21,63 +21,63 @@ agents:
     note: Spec deltas, context, task decomposition
     claude: { model: opus, effort: xhigh }
     codex: { model: gpt-5.5, effort: xhigh }
-    pi: { model: opencode/gpt-5.6-luna, thinking: xhigh }
+    pi: { model: opencode-go/gpt-5.6-luna, thinking: high }
 
   plan-reviewer:
     file: .claude/agents/plan-reviewer.md
     note: Adversarial plan review
     claude: { model: opus, effort: xhigh }
     codex: { model: gpt-5.5, effort: xhigh }
-    pi: { model: opencode/kimi-k3, thinking: high }
+    pi: { model: opencode-go/kimi-k3, thinking: high }
 
   implementer-agent:
     file: .claude/agents/implementer-agent.md
     note: Standard implementation tasks
     claude: { model: sonnet, effort: high }
     codex: { model: gpt-5.4, effort: high }
-    pi: { model: opencode/gpt-6-luna, thinking: high }
+    pi: { model: opencode-go/gpt-6-luna, thinking: high }
 
   implementer-expert-agent:
     file: .claude/agents/implementer-expert-agent.md
     note: Tasks tagged `[expert]`
     claude: { model: opus, effort: xhigh }
     codex: { model: gpt-5.5, effort: xhigh }
-    pi: { model: opencode/glm-5.3, thinking: high }
+    pi: { model: opencode-go/glm-5.3, thinking: high }
 
   code-reviewer:
     file: .claude/agents/code-reviewer.md
     note: Adversarial implementation review
     claude: { model: opus, effort: xhigh }
     codex: { model: gpt-5.5, effort: xhigh }
-    pi: { model: opencode/grok-4.7, thinking: high }
+    pi: { model: opencode-go/grok-4.7, thinking: high }
 
   audit-agent:
     file: .claude/agents/audit-agent.md
     note: Mission ↔ spec-library sync
     claude: { model: opus, effort: high }
     codex: { model: gpt-5.5, effort: high }
-    pi: { model: opencode/glm-5.3-flash, thinking: high }
+    pi: { model: opencode-go/glm-5.3-flash, thinking: high }
 
   architecture-agent:
     file: .claude/agents/architecture-agent.md
     note: Brownfield draft of `specs/architecture.md` for `/speq:mission`
     claude: { model: opus, effort: high }
     codex: { model: gpt-5.5, effort: high }
-    pi: { model: opencode/gpt-5.6-luna, thinking: high }
+    pi: { model: opencode-go/gpt-5.6-luna, thinking: high }
 
   adr-audit-agent:
     file: .claude/agents/adr-audit-agent.md
     note: ADR noise and accuracy review
     claude: { model: fable, effort: high }
     codex: { model: gpt-5.5, effort: high }
-    pi: { model: opencode/glm-5.3-flash, thinking: high }
+    pi: { model: opencode-go/glm-5.3-flash, thinking: high }
 
   recorder-agent:
     file: .claude/agents/recorder-agent.md
     note: Deterministic spec merge and archive
     claude: { model: sonnet, effort: medium }
     codex: { model: gpt-5.4, effort: medium }
-    pi: { model: opencode/deepseek-v4.1-flash, thinking: high }
+    pi: { model: opencode-go/deepseek-v4.1-flash, thinking: high }
 
 skills:
   speq-plan:
